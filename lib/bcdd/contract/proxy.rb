@@ -32,6 +32,8 @@ module BCDD::Contract
   # end
   class Proxy
     def self.new(object)
+      return object unless Config.instance.proxy_enabled
+
       instance = allocate
       instance.send(:initialize, object)
       instance

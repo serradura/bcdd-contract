@@ -6,6 +6,8 @@ require:
 AllCops:
   NewCops: enable
   TargetRubyVersion: 2.7
+  Exclude:
+    - 'example/**/*.rb'
 
 Layout/LineLength:
   Max: 120
@@ -16,7 +18,14 @@ Layout/ExtraSpacing:
 Layout/MultilineMethodCallIndentation:
   Enabled: false
 
+Lint/BinaryOperatorWithIdenticalOperands:
+  Exclude:
+    - test/**/*.rb
+
 Lint/UnderscorePrefixedVariableName:
+  Enabled: false
+
+Lint/Void:
   Enabled: false
 
 Style/AccessModifierDeclarations:
@@ -46,6 +55,10 @@ Style/MixinGrouping:
 Naming/MethodName:
   Enabled: false
 
+Naming/MethodParameterName:
+  Exclude:
+    - test/**/*.rb
+
 Naming/VariableName:
   Enabled: false
 
@@ -70,11 +83,3 @@ Minitest/AssertOperator:
 Naming/FileName:
   Exclude:
     - lib/bcdd-contract.rb
-
-Naming/MethodParameterName:
-  Exclude:
-    - test/**/*.rb
-
-Lint/BinaryOperatorWithIdenticalOperands:
-  Exclude:
-    - test/**/*.rb
