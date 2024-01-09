@@ -2,9 +2,6 @@
 
 require_relative 'contract/version'
 
-module BCDD
-  module Contract
-    class Error < StandardError; end
-    # Your code goes here...
-  end
+module BCDD::Contract
+  class Error < StandardError; end
 end
