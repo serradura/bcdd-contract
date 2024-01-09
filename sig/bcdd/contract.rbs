@@ -10,5 +10,15 @@ module BCDD
 
       def self.new: (checker: ::Proc, message: String) -> Module
     end
+
+    class Proxy
+      attr_reader object: untyped
+
+      def self.new: (untyped) -> Proxy
+
+      def self.to_proc: () -> Proc
+
+      def initialize: (untyped) -> Proxy
+    end
   end
 end

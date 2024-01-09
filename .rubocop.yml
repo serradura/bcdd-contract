@@ -70,3 +70,11 @@ Minitest/AssertOperator:
 Naming/FileName:
   Exclude:
     - lib/bcdd-contract.rb
+
+Naming/MethodParameterName:
+  Exclude:
+    - test/**/*.rb
+
+Lint/BinaryOperatorWithIdenticalOperands:
+  Exclude:
+    - test/**/*.rb
