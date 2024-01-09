@@ -4,5 +4,11 @@ module BCDD
 
     class Error < StandardError
     end
+
+    module Type
+      METHODS: String
+
+      def self.new: (checker: ::Proc, message: String) -> Module
+    end
   end
 end
