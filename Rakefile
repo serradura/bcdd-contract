@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 require 'bundler/gem_tasks'
-require 'minitest/test_task'
+require 'rake/testtask'
 
-Minitest::TestTask.create(:test) do |t|
+Rake::TestTask.new(:test) do |t|
+  t.warning = false
+
   t.libs += %w[lib test]
 
-  t.test_globs = 'test/**/*_test.rb'
+  t.test_files = FileList.new('test/**/*_test.rb')
 end
 
 require 'rubocop/rake_task'
