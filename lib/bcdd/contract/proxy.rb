@@ -6,20 +6,15 @@ module BCDD::Contract
   #
   # @example
   # class Calculation < ::BCDD::Contract::Proxy
-  #   ValidNumber = ::BCDD::Contract::Type.new(
-  #     message: '%p must be a valid number (numeric, not infinity or NaN)',
-  #     checker: ->(arg) do
-  #       is_nan = arg.respond_to?(:nan?) && arg.nan?
-  #       is_inf = arg.respond_to?(:infinite?) && arg.infinite?
+  #   ValidNumber = ::BCDD::Contract::Unit.new ->(value, err) do
+  #     err << '%p must be numeric' and return unless value.is_a?(::Numeric)
+  #     err << '%p cannot be nan' and return if value.respond_to?(:nan?) && value.nan?
+  #     err << '%p cannot be infinite' if value.respond_to?(:infinite?) && value.infinite?
+  #   end
   #
-  #       arg.is_a?(::Numeric) && !(is_nan || is_inf)
-  #     end
-  #   )
-  #
-  #   CannotBeZero = ::BCDD::Contract::Type.new(
-  #     message: '%p cannot be zero',
-  #     checker: ->(arg) { arg != 0 }
-  #   )
+  #   CannotBeZero = ::BCDD::Contract::Unit.new ->(arg, err) do
+  #     err << '%p cannot be zero' if arg.zero?
+  #   end
   #
   #   def divide(a, b)
   #     ValidNumber[a]

@@ -4,47 +4,44 @@ require 'test_helper'
 
 class BCDD::Contract::ProxyTest < Minitest::Test
   module Calc
-    class Interface < ::BCDD::Contract::Proxy
-      ValidNumber = ::BCDD::Contract::Type.new(
-        message: '%p must be a valid number (numeric, not infinity or NaN)',
-        checker: ->(arg) do
-          is_nan = arg.respond_to?(:nan?) && arg.nan?
-          is_inf = arg.respond_to?(:infinite?) && arg.infinite?
+    class Contract < ::BCDD::Contract::Proxy
+      ValidNumber = ::BCDD::Contract::Unit.new ->(value, err) do
+        err << '%p must be numeric' and return unless value.is_a?(::Numeric)
 
-          arg.is_a?(::Numeric) && !(is_nan || is_inf)
-        end
-      )
+        err << '%p cannot be nan' and return if value.respond_to?(:nan?) && value.nan?
+
+        err << '%p cannot be infinite' if value.respond_to?(:infinite?) && value.infinite?
+      end
 
       def add(a, b)
-        ValidNumber[a]
-        ValidNumber[b]
+        +ValidNumber[a]
+        +ValidNumber[b]
 
-        ValidNumber[object.add(a, b)]
+        +ValidNumber[object.add(a, b)]
       end
 
       def subtract(a, b)
-        ValidNumber[a]
-        ValidNumber[b]
+        +ValidNumber[a]
+        +ValidNumber[b]
 
-        object.subtract(a, b).tap(&ValidNumber)
+        +ValidNumber[object.subtract(a, b)]
       end
 
-      CannotBeZero = ::BCDD::Contract::Type.new(
-        message: '%p cannot be zero',
-        checker: ->(arg) { arg != 0 }
-      )
+      CannotBeZero = ::BCDD::Contract::Unit.new ->(arg, err) do
+        err << '%p cannot be zero' if arg.zero?
+      end
 
       def divide(a, b)
-        ValidNumber[a]
-        ValidNumber[b] && CannotBeZero[b]
+        +ValidNumber[a]
+        +ValidNumber[b] && +CannotBeZero[b]
 
-        object.divide(a, b).tap(&ValidNumber)
+        +ValidNumber[object.divide(a, b)]
       end
     end
 
     class Operations
       def initialize(calc)
-        @calc = Interface.new(calc)
+        @calc = Contract.new(calc)
       end
 
       def add(...); @calc.add(...); end
@@ -95,21 +92,37 @@ class BCDD::Contract::ProxyTest < Minitest::Test
     err2b = assert_raises(BCDD::Contract::Error) { calc2.subtract(1, '2') }
     err3b = assert_raises(BCDD::Contract::Error) { calc2.divide('1', 0) }
 
-    assert_equal('"2" must be a valid number (numeric, not infinity or NaN)', err1a.message)
-    assert_equal('"1" must be a valid number (numeric, not infinity or NaN)', err2a.message)
+    assert_equal('"2" must be numeric', err1a.message)
+    assert_equal('"1" must be numeric', err2a.message)
     assert_equal('0 cannot be zero', err3a.message)
 
-    assert_equal('"1" must be a valid number (numeric, not infinity or NaN)', err1b.message)
-    assert_equal('"2" must be a valid number (numeric, not infinity or NaN)', err2b.message)
-    assert_equal('"1" must be a valid number (numeric, not infinity or NaN)', err3b.message)
+    assert_equal('"1" must be numeric', err1b.message)
+    assert_equal('"2" must be numeric', err2b.message)
+    assert_equal('"1" must be numeric', err3b.message)
   end
 
   test '.to_proc' do
-    interfaces = [NamespaceA::CalcOperations.new, NamespaceB::CalcOperations].map(&Calc::Interface)
+    contracts = [NamespaceA::CalcOperations.new, NamespaceB::CalcOperations].map(&Calc::Contract)
 
-    assert_equal [Calc::Interface, Calc::Interface], interfaces.map(&:class)
+    assert_equal [Calc::Contract, Calc::Contract], contracts.map(&:class)
 
-    assert_equal 3, interfaces[0].add(1, 2)
-    assert_equal 3, interfaces[1].add(1, 2)
+    assert_equal 3, contracts[0].add(1, 2)
+    assert_equal 3, contracts[1].add(1, 2)
+  end
+
+  test '.new' do
+    object = Object.new
+
+    instance = BCDD::Contract::Proxy.new(object)
+
+    assert_instance_of BCDD::Contract::Proxy, instance
+  end
+
+  test '#object' do
+    object = Object.new
+
+    instance = BCDD::Contract::Proxy.new(object)
+
+    assert_same object, instance.object
   end
 end

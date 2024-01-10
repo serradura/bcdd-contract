@@ -2,7 +2,7 @@
 
 require_relative 'contract/version'
 require_relative 'contract/config'
-require_relative 'contract/type'
+require_relative 'contract/unit'
 require_relative 'contract/proxy'
 
 # The main module of the gem.

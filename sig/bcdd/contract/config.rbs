@@ -1,0 +1,11 @@
+module BCDD::Contract
+  class Config
+    include Singleton
+
+    attr_accessor proxy_enabled: bool
+
+    def self.instance: () -> Config
+
+    def initialize: () -> void
+  end
+end

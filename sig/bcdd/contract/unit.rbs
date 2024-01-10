@@ -1,0 +1,33 @@
+module BCDD::Contract::Unit
+  class Checking
+    attr_reader errors: Array[String]
+
+    attr_reader value: untyped
+
+    def initialize: (Proc, untyped) -> void
+
+    def valid?: () -> bool
+    def invalid?: () -> bool
+    alias errors? invalid?
+
+    def errors_message: () -> String
+  end
+
+  module Macros
+    def []: (untyped) -> Checking
+
+    def ===: (untyped) -> bool
+
+    def to_proc: () -> Proc
+
+    private
+
+    attr_reader checker: Proc
+
+    def setup: (Proc) -> void
+  end
+
+  def self.new: (untyped) -> Module
+
+  def self.[]: (untyped) -> Module
+end

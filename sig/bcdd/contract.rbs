@@ -4,34 +4,5 @@ module BCDD
 
     class Error < StandardError
     end
-
-    class Config
-      include Singleton
-
-      attr_accessor enabled: bool
-
-      def self.instance: () -> Config
-
-      def initialize: () -> void
-    end
-
-    module Type
-      METHODS: String
-
-      def self.new: (checker: ::Proc, message: String) -> Module
-    end
-
-    class Proxy
-      attr_reader object: untyped
-
-      def self.new: (untyped) -> Proxy
-
-      def self.to_proc: () -> Proc
-
-      def initialize: (untyped) -> Proxy
-    end
-
-    def self.config: () -> Config
-    def self.configuration: { (Config) -> void } -> Config
   end
 end
