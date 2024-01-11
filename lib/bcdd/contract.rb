@@ -3,11 +3,9 @@
 require_relative 'contract/version'
 require_relative 'contract/config'
 require_relative 'contract/unit'
+require_relative 'contract/core/proxy'
 require_relative 'contract/proxy'
 
-# The main module of the gem.
-# It contains the configuration methods and the error class.
-#
 module BCDD::Contract
   class Error < StandardError; end
 
@@ -19,5 +17,15 @@ module BCDD::Contract
     yield(config)
 
     config.freeze
+  end
+
+  def self.unit(checker)
+    Unit.new(checker)
+  end
+
+  def self.proxy(always_enabled: false, &block)
+    proxy_class = always_enabled ? Proxy::AlwaysEnabled : Proxy
+
+    ::Class.new(proxy_class, &block)
   end
 end

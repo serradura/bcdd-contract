@@ -28,6 +28,9 @@ Lint/UnderscorePrefixedVariableName:
 Lint/Void:
   Enabled: false
 
+Style/Documentation:
+  Enabled: false
+
 Style/AccessModifierDeclarations:
   Enabled: false
 
