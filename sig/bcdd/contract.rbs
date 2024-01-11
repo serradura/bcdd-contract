@@ -1,8 +1,18 @@
 module BCDD
   module Contract
-    VERSION: String
+    VERSION: ::String
 
-    class Error < StandardError
+    class Error < ::StandardError
     end
+
+    def self.config: () -> Config
+
+    def self.configuration: { (Config) -> void } -> Config
+
+    def self.unit: (Proc) -> ::Module
+
+    def self.proxy: (always_enabled: bool) { (::Class) -> void } -> ::Class
+
+    def self.error!: (String) -> void
   end
 end

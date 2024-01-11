@@ -1,14 +1,8 @@
 module BCDD::Contract
-  class Proxy
-    attr_reader object: untyped
+  class Proxy < Core::Proxy
+    class AlwaysEnabled < Core::Proxy
+    end
 
-    def self.new: (untyped) -> Proxy
-
-    def self.to_proc: () -> Proc
-
-    def initialize: (untyped) -> Proxy
+    def self.new: (untyped) -> BCDD::Contract::Proxy
   end
-
-  def self.config: () -> Config
-  def self.configuration: { (Config) -> void } -> Config
 end

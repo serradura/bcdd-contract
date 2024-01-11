@@ -1,6 +1,6 @@
 module BCDD::Contract
   class Config
-    include Singleton
+    include ::Singleton
 
     attr_accessor proxy_enabled: bool
 
