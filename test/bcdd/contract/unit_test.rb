@@ -23,6 +23,7 @@ class BCDD::Contract::UnitTest < Minitest::Test
 
   test 'that is a module' do
     assert_instance_of Module, ValidNumber
+    assert_kind_of BCDD::Contract::Unit::Checker, ValidNumber
 
     assert_equal('BCDD::Contract::UnitTest::ValidNumber', ValidNumber.name)
 
@@ -48,9 +49,9 @@ class BCDD::Contract::UnitTest < Minitest::Test
     assert_equal(1r, !ValidNumber[1r])
     assert_in_delta(1.0, !ValidNumber[1.0])
 
-    assert_equal(1, ValidNumber[1].value_or_err!)
-    assert_equal(1r, ValidNumber[1r].value_or_err!)
-    assert_in_delta(1.0, ValidNumber[1.0].value_or_err!)
+    assert_equal(1, ValidNumber[1].value_or_raise_validation_errors!)
+    assert_equal(1r, ValidNumber[1r].value_or_raise_validation_errors!)
+    assert_in_delta(1.0, ValidNumber[1.0].value_or_raise_validation_errors!)
 
     assert_raises(BCDD::Contract::Error, '"1" must be numeric') { +ValidNumber['1'] }
     assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') { +ValidNumber[0.0 / 0.0] }
@@ -60,9 +61,13 @@ class BCDD::Contract::UnitTest < Minitest::Test
     assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') { !ValidNumber[0.0 / 0.0] }
     assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') { !ValidNumber[1.0 / 0.0] }
 
-    assert_raises(BCDD::Contract::Error, '"1" must be numeric') { ValidNumber['1'].value_or_err! }
-    assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') { ValidNumber[0.0 / 0.0].value_or_err! }
-    assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') { ValidNumber[1.0 / 0.0].value_or_err! }
+    assert_raises(BCDD::Contract::Error, '"1" must be numeric') { ValidNumber['1'].value_or_raise_validation_errors! }
+    assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') do
+      ValidNumber[0.0 / 0.0].value_or_raise_validation_errors!
+    end
+    assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') do
+      ValidNumber[1.0 / 0.0].value_or_raise_validation_errors!
+    end
   end
 
   test '.to_proc' do

@@ -31,4 +31,8 @@ class BCDD::ContractTest < Minitest::Test
 
     assert_raises(TypeError, ':a is not a number') { NumericProxy[1] + :a }
   end
+
+  test '.error!' do
+    assert_raises(BCDD::Contract::Error, 'An awesome message') { BCDD::Contract.error! 'An awesome message' }
+  end
 end

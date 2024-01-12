@@ -1,0 +1,44 @@
+# frozen_string_literal: true
+
+require 'test_helper'
+
+class BCDD::Contract::UnitComposedTest < Minitest::Test
+  module Checker
+    is_filled = ->(val, err) { err << '%p must be filled' if val.empty? }
+    is_email  = ->(val, err) { err << '%p must be an email' unless val.match?(/\A[^@\s]+@[^@\s]+\z/) }
+
+    IsString       = ::BCDD::Contract::Unit[String]
+    IsFilled       = ::BCDD::Contract::Unit[is_filled]
+    HasEmailFormat = ::BCDD::Contract::Unit[is_email]
+
+    Name  = IsString & IsFilled
+    Email = IsString & IsFilled & HasEmailFormat
+  end
+
+  test 'a composed checker' do
+    assert_instance_of(Module, Checker::Name)
+    assert_instance_of(Module, Checker::Email)
+
+    assert_kind_of(BCDD::Contract::Unit::Checker, Checker::Name)
+    assert_kind_of(BCDD::Contract::Unit::Checker, Checker::Email)
+
+    assert_equal('BCDD::Contract::UnitComposedTest::Checker::Name', Checker::Name.name)
+    assert_equal('BCDD::Contract::UnitComposedTest::Checker::Email', Checker::Email.name)
+
+    assert_operator Checker::Name, :===, 'John'
+    refute_operator Checker::Name, :===, ''
+    refute_operator Checker::Name, :===, 1
+
+    assert_operator Checker::Email, :===, 'john@email.com'
+    refute_operator Checker::Email, :===, ''
+    refute_operator Checker::Email, :===, 'john'
+    refute_operator Checker::Email, :===, 1
+
+    assert_equal(['1 must be a String'], Checker::Name[1].errors)
+    assert_equal(['"" must be filled'], Checker::Name[''].errors)
+
+    assert_equal(['1 must be a String'], Checker::Email[1].errors)
+    assert_equal(['"" must be filled'], Checker::Email[''].errors)
+    assert_equal(['"john" must be an email'], Checker::Email['john'].errors)
+  end
+end

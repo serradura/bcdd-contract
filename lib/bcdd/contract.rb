@@ -28,4 +28,8 @@ module BCDD::Contract
 
     ::Class.new(proxy_class, &block)
   end
+
+  def self.error!(message)
+    raise Error, message
+  end
 end

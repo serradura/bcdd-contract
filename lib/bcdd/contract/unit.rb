@@ -39,21 +39,23 @@ module BCDD::Contract
       def errors
         return @errors if @errors.frozen?
 
-        @errors.map! { |error| format(error, value) }.freeze
+        @errors = @errors.flat_map { |error| format(error, value) }.freeze
       end
 
       def errors_message
         errors.join(', ')
       end
 
-      def +@
-        return value if valid?
+      def raise_validation_errors!
+        raise Error, errors_message if invalid?
+      end
 
-        raise Error, errors_message
+      def +@
+        raise_validation_errors! || value
       end
 
       alias !@ +@
-      alias value_or_err! +@
+      alias value_or_raise_validation_errors! +@
     end
 
     module Checker
@@ -69,28 +71,53 @@ module BCDD::Contract
         ->(value) { self[value] }
       end
 
-      private
+      SequenceMapper = ->(strategies) do
+        ->(value, err) { strategies.each { |strategy| strategy.call(value, err) if err.empty? } }
+      end
+
+      def &(other)
+        other.is_a?(Checker) or raise ::ArgumentError, 'must be a BCDD::Contract::Unit::Checker'
+
+        check_in_sequence = SequenceMapper.call([checker, other.checker])
+
+        ::Module.new.extend(Checker).send(:setup, check_in_sequence)
+      end
+
+      def invariant(value)
+        self[value].raise_validation_errors!
+
+        output = yield(value)
+
+        self[value].raise_validation_errors!
+
+        output
+      end
+
+      protected
 
       attr_reader :checker
 
       def setup(checker)
-        @checker = checker
+        tap { @checker = checker }
       end
+
+      private_constant :SequenceMapper
     end
 
     def self.new(checker)
       (checker.is_a?(::Proc) && checker.lambda?) or raise ::ArgumentError, 'must be a lambda'
+
       checker.arity == 2 or raise ::ArgumentError, 'must have two arguments (value, errors)'
 
-      mod = ::Module.new.extend(Checker)
-      mod.send(:setup, checker)
-      mod
+      ::Module.new.extend(Checker).send(:setup, checker)
     end
 
-    def self.[](class_or_mod)
-      class_or_mod.is_a?(::Module) or raise ::ArgumentError, format('%p must be a class or a module', class_or_mod)
+    def self.[](arg)
+      return new(arg) if arg.is_a?(::Proc)
 
-      new(->(value, err) { err << "%p must be a #{class_or_mod.name}" unless value.is_a?(class_or_mod) })
+      arg.is_a?(::Module) or raise ::ArgumentError, format('%p must be a class or a module', arg)
+
+      new(->(value, err) { err << "%p must be a #{arg.name}" unless value.is_a?(arg) })
     end
   end
 end
