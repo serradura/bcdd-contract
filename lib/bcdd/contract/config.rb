@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'singleton'
-
 module BCDD::Contract
   # A singleton class to store the configuration of the gem.
   #

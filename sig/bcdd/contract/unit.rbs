@@ -15,9 +15,9 @@ module BCDD::Contract::Unit
 
     def raise_validation_errors!: () -> void
 
-    def +@: () -> untyped
+    def value_or_raise_validation_errors!: () -> untyped
 
-    alias value_or_raise_validation_errors! +@
+    alias value! value_or_raise_validation_errors!
   end
 
   module Checker
@@ -38,7 +38,21 @@ module BCDD::Contract::Unit
     def setup: (Proc) -> void
   end
 
+  class Factory
+    include ::Singleton
+
+    private attr_reader cache: Hash[::Module, ::Module]
+
+    def self.instance: () -> Factory
+
+    def initialize: () -> void
+
+    def call: (untyped) -> ::Module
+    def unit: (untyped) -> ::Module
+    def type: (untyped) -> ::Module
+  end
+
   def self.new: (untyped) -> ::Module
 
-  def self.[]: (untyped) -> Module
+  def self.[]: (untyped) -> ::Module
 end

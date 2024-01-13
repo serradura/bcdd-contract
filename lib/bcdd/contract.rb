@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'singleton'
+
 require_relative 'contract/version'
 require_relative 'contract/config'
 require_relative 'contract/unit'

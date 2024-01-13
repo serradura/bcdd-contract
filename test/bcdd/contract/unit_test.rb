@@ -3,13 +3,14 @@
 require 'test_helper'
 
 class BCDD::Contract::UnitTest < Minitest::Test
-  ValidNumber = ::BCDD::Contract::Unit.new ->(value, err) do
-    err << '%p must be numeric' and return unless value.is_a?(::Numeric)
+  cannot_be_inf = ->(val, err) { err << '%p cannot be infinite' if val.respond_to?(:infinite?) && val.infinite? }
+  cannot_be_nan = ->(val, err) { err << '%p cannot be nan' if val.respond_to?(:nan?) && val.nan? }
 
-    err << '%p cannot be nan' and return if value.respond_to?(:nan?) && value.nan?
+  CannotBeInfinity = ::BCDD::Contract::Unit.new(cannot_be_inf)
+  CannotBeNaN      = ::BCDD::Contract::Unit.new(cannot_be_nan)
+  IsNumeric        = ::BCDD::Contract::Unit[Numeric]
 
-    err << '%p cannot be infinite' if value.respond_to?(:infinite?) && value.infinite?
-  end
+  ValidNumber = IsNumeric & CannotBeNaN & CannotBeInfinity
 
   test 'the checking: argument validation' do
     err1 = assert_raises(ArgumentError) { ::BCDD::Contract::Unit.new(Object.new) }
@@ -53,21 +54,25 @@ class BCDD::Contract::UnitTest < Minitest::Test
     assert_equal(1r, ValidNumber[1r].value_or_raise_validation_errors!)
     assert_in_delta(1.0, ValidNumber[1.0].value_or_raise_validation_errors!)
 
-    assert_raises(BCDD::Contract::Error, '"1" must be numeric') { +ValidNumber['1'] }
-    assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') { +ValidNumber[0.0 / 0.0] }
-    assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') { +ValidNumber[1.0 / 0.0] }
-
-    assert_raises(BCDD::Contract::Error, '"1" must be numeric') { !ValidNumber['1'] }
-    assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') { !ValidNumber[0.0 / 0.0] }
-    assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') { !ValidNumber[1.0 / 0.0] }
-
-    assert_raises(BCDD::Contract::Error, '"1" must be numeric') { ValidNumber['1'].value_or_raise_validation_errors! }
+    assert_raises(BCDD::Contract::Error, '"1" must be a Numeric') { ValidNumber['1'].value_or_raise_validation_errors! }
     assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') do
       ValidNumber[0.0 / 0.0].value_or_raise_validation_errors!
     end
     assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') do
       ValidNumber[1.0 / 0.0].value_or_raise_validation_errors!
     end
+
+    assert_raises(BCDD::Contract::Error, '"1" must be a Numeric') { ValidNumber['1'].value! }
+    assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') { ValidNumber[0.0 / 0.0].value! }
+    assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') { ValidNumber[1.0 / 0.0].value! }
+
+    assert_raises(BCDD::Contract::Error, '"1" must be a Numeric') { +ValidNumber['1'] }
+    assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') { +ValidNumber[0.0 / 0.0] }
+    assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') { +ValidNumber[1.0 / 0.0] }
+
+    assert_raises(BCDD::Contract::Error, '"1" must be a Numeric') { !ValidNumber['1'] }
+    assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') { !ValidNumber[0.0 / 0.0] }
+    assert_raises(BCDD::Contract::Error, 'Infinity cannot be infinite') { !ValidNumber[1.0 / 0.0] }
   end
 
   test '.to_proc' do
@@ -100,8 +105,8 @@ class BCDD::Contract::UnitTest < Minitest::Test
     assert_predicate checking, :invalid?
     assert_predicate checking, :errors?
 
-    assert_equal(['"1" must be numeric'], checking.errors)
-    assert_equal('"1" must be numeric', checking.errors_message)
+    assert_equal(['"1" must be a Numeric'], checking.errors)
+    assert_equal('"1" must be a Numeric', checking.errors_message)
   end
 
   test 'an instance checker' do
