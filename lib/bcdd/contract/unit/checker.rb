@@ -19,7 +19,7 @@ module BCDD::Contract::Unit
     end
 
     def &(other)
-      other.is_a?(Checker) or raise ::ArgumentError, 'must be a BCDD::Contract::Unit::Checker'
+      other = Factory.instance.call(other)
 
       check_in_sequence = SequenceMapper.call([checker, other.checker])
 

@@ -5,45 +5,55 @@ require 'test_helper'
 class BCDD::Contract::UnitInvariantTest < Minitest::Test
   class ShoppingCart
     module Input
-      is_positive = ->(label) { ->(val, err) { err << "#{label} (%p) must be positive" unless val.positive? } }
+      cannot_be_nan    = ->(val, err) { err << '%p cannot be nan' if val.respond_to?(:nan?) && val.nan? }
+      cannot_be_inf    = ->(val, err) { err << '%p cannot be infinite' if val.respond_to?(:infinite?) && val.infinite? }
+      must_be_filled   = ->(val, err) { err << 'item name must be filled' if val.empty? }
+      must_be_positive = ->(label) { ->(val, err) { err << "#{label} (%p) must be positive" unless val.positive? } }
 
-      IsString  = ::BCDD::Contract::Unit[String]
-      IsInteger = ::BCDD::Contract::Unit[Integer]
-      IsNumeric = ::BCDD::Contract::Unit[Numeric]
+      ItemName    = ::BCDD::Contract::Unit[::String]  & must_be_filled
+      Quantity    = ::BCDD::Contract::Unit[::Integer] & must_be_positive['quantity']
+      ValidNumber = ::BCDD::Contract::Unit[::Numeric] & cannot_be_nan & cannot_be_inf
 
-      ItemName    = IsString  & ::BCDD::Contract::Unit[->(val, err) { err << 'item name must be filled' if val.empty? }]
-      Quantity    = IsInteger & ::BCDD::Contract::Unit[is_positive['quantity']]
-      PricePerUnit = IsNumeric & ::BCDD::Contract::Unit[is_positive['price per unit']]
+      PricePerUnit = ValidNumber & must_be_positive['price per unit']
     end
 
-    ItemsMustBeValid = ::BCDD::Contract.unit ->(items, err) do
-      items.each do |name, data|
-        name_errors           = Input::ItemName[name].errors
-        quantity_errors       = Input::Quantity[data[:quantity]].errors
-        price_per_unit_errors = Input::PricePerUnit[data[:price_per_unit]].errors
+    module Items
+      module Contract
+        cannot_be_negative = ->(val, err) { err << '%p cannot be negative' if val.negative? }
 
-        item_errors = name_errors + quantity_errors + price_per_unit_errors
+        ItemQuantity = ::BCDD::Contract::Unit[::Integer] & cannot_be_negative
 
-        err << "#{name}: #{item_errors.join(', ')}" unless item_errors.empty?
+        MustBeValid = ::BCDD::Contract.unit ->(items, err) do
+          items.each do |name, data|
+            quantity_errors       = ItemQuantity[data[:quantity]].errors
+            item_name_errors      = Input::ItemName[name].errors
+            price_per_unit_errors = Input::PricePerUnit[data[:price_per_unit]].errors
+
+            item_errors = item_name_errors + quantity_errors + price_per_unit_errors
+
+            err << "#{name}: #{item_errors.join(', ')}" unless item_errors.empty?
+          end
+        end
       end
     end
 
     def initialize(items = {})
-      @items = +ItemsMustBeValid[items]
+      @items = +Items::Contract::MustBeValid[items]
     end
 
     def add_item(item_name, quantity, price_per_unit)
-      ItemsMustBeValid.invariant(@items) do |items|
+      Items::Contract::MustBeValid.invariant(@items) do |items|
         item_name = +Input::ItemName[item_name]
 
-        items[item_name] ||= { quantity: 0, price_per_unit: 0 }
-        items[item_name][:quantity]      += +Input::Quantity[quantity]
-        items[item_name][:price_per_unit] = +Input::PricePerUnit[price_per_unit]
+        item = items[item_name] ||= { quantity: 0, price_per_unit: 0 }
+
+        item[:quantity]      += +Input::Quantity[quantity]
+        item[:price_per_unit] = +Input::PricePerUnit[price_per_unit]
       end
     end
 
     def remove_item(item_name, quantity)
-      ItemsMustBeValid.invariant(@items) do |items|
+      Items::Contract::MustBeValid.invariant(@items) do |items|
         item_name = +Input::ItemName[item_name]
         quantity  = +Input::Quantity[quantity]
 
@@ -57,7 +67,7 @@ class BCDD::Contract::UnitInvariantTest < Minitest::Test
     end
 
     def total_price
-      (+ItemsMustBeValid[@items]).sum { |_name, idata| idata[:quantity] * idata[:price_per_unit] }
+      (+Items::Contract::MustBeValid[@items]).sum { |_name, idata| idata[:quantity] * idata[:price_per_unit] }
     end
   end
 
@@ -71,6 +81,10 @@ class BCDD::Contract::UnitInvariantTest < Minitest::Test
     cart.remove_item('Apple', 2)
 
     assert_in_delta(4.5, cart.total_price)
+
+    cart.remove_item('Apple', 3)
+
+    assert_predicate(cart.total_price, :zero?)
 
     [
       -> { cart.instance_variable_set(:@items, { 'Apple' => { quantity: [-1, '1'].sample, price_per_unit: 1.5 } }) },

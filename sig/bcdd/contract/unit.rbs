@@ -29,7 +29,7 @@ module BCDD::Contract::Unit
 
     SequenceMapper: ::Proc
 
-    def & : (Checker) -> Module
+    def & : (untyped) -> Module
 
     def invariant: (untyped) { (untyped) -> untyped } -> untyped
 
@@ -47,9 +47,9 @@ module BCDD::Contract::Unit
 
     def initialize: () -> void
 
-    def call: (untyped) -> ::Module
-    def unit: (untyped) -> ::Module
-    def type: (untyped) -> ::Module
+    def call: (untyped) -> untyped
+    def unit: (untyped) -> untyped
+    def type: (untyped) -> untyped
   end
 
   def self.new: (untyped) -> ::Module

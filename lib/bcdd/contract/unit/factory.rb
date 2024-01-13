@@ -13,6 +13,8 @@ module BCDD::Contract::Unit
     end
 
     def call(arg)
+      return arg if arg.is_a?(Checker)
+
       arg.is_a?(::Proc) ? unit(arg) : type(arg)
     end
 
