@@ -7,6 +7,7 @@ require_relative 'contract/config'
 require_relative 'contract/unit'
 require_relative 'contract/core/proxy'
 require_relative 'contract/proxy'
+require_relative 'contract/assertions'
 
 module BCDD::Contract
   class Error < StandardError; end
@@ -33,5 +34,29 @@ module BCDD::Contract
 
   def self.error!(message)
     raise Error, message
+  end
+
+  def self.assert!(value, message, &block)
+    return value if (value && !block) || (value && block.call(value))
+
+    error!(format(message, value))
+  end
+
+  def self.refute!(value, message, &block)
+    return value if (!value && !block) || (value && block && !block.call(value))
+
+    error!(format(message, value))
+  end
+
+  def self.assert(value, ...)
+    Config.instance.assertions_enabled ? assert!(value, ...) : value
+  end
+
+  def self.refute(value, ...)
+    Config.instance.assertions_enabled ? refute!(value, ...) : value
+  end
+
+  def self.[](arg)
+    Unit[arg]
   end
 end

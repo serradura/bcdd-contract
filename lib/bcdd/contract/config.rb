@@ -6,10 +6,15 @@ module BCDD::Contract
   class Config
     include ::Singleton
 
-    attr_accessor :proxy_enabled
+    attr_accessor :proxy_enabled, :assertions_enabled
 
     def initialize
-      self.proxy_enabled = true
+      self.proxy_enabled      = true
+      self.assertions_enabled = true
+    end
+
+    def options
+      { proxy_enabled: proxy_enabled, assertions_enabled: assertions_enabled }
     end
   end
 end

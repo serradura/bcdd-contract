@@ -1,0 +1,7 @@
+module BCDD::Contract::Assertions
+  def assert!: (untyped, String) { (untyped) -> bool } -> untyped
+  def refute!: (untyped, String) { (untyped) -> bool } -> untyped
+
+  def assert: (untyped, String) { (untyped) -> bool } -> untyped
+  def refute: (untyped, String) { (untyped) -> bool } -> untyped
+end

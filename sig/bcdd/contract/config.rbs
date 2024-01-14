@@ -3,9 +3,12 @@ module BCDD::Contract
     include ::Singleton
 
     attr_accessor proxy_enabled: bool
+    attr_accessor assertions_enabled: bool
 
     def self.instance: () -> Config
 
     def initialize: () -> void
+
+    def options: () -> Hash[Symbol, bool]
   end
 end

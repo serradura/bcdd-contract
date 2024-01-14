@@ -65,6 +65,10 @@ Naming/MethodParameterName:
 Naming/VariableName:
   Enabled: false
 
+Naming/FileName:
+  Exclude:
+    - lib/bcdd-contract.rb
+
 Metrics/BlockLength:
   Exclude:
     - bcdd-contract.gemspec
@@ -83,6 +87,6 @@ Minitest/AssertEmptyLiteral:
 Minitest/AssertOperator:
   Enabled: false
 
-Naming/FileName:
+Performance/RedundantBlockCall:
   Exclude:
-    - lib/bcdd-contract.rb
+    - lib/bcdd/contract.rb

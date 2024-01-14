@@ -42,5 +42,6 @@ module BCDD::Contract::Unit
     alias !@ value_or_raise_validation_errors!
     alias +@ value_or_raise_validation_errors!
     alias value! value_or_raise_validation_errors!
+    alias assert! value_or_raise_validation_errors!
   end
 end

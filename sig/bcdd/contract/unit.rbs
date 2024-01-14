@@ -18,6 +18,7 @@ module BCDD::Contract::Unit
     def value_or_raise_validation_errors!: () -> untyped
 
     alias value! value_or_raise_validation_errors!
+    alias assert! value_or_raise_validation_errors!
   end
 
   module Checker

@@ -14,5 +14,13 @@ module BCDD
     def self.proxy: (always_enabled: bool) { (::Class) -> void } -> ::Class
 
     def self.error!: (String) -> void
+
+    def self.assert!: (untyped, String) { (untyped) -> bool } -> untyped
+    def self.refute!: (untyped, String) { (untyped) -> bool } -> untyped
+
+    def self.assert: (untyped, String) { (untyped) -> bool } -> untyped
+    def self.refute: (untyped, String) { (untyped) -> bool } -> untyped
+
+    def self.[]: (untyped) -> ::Module
   end
 end

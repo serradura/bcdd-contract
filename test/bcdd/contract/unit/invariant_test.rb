@@ -5,25 +5,25 @@ require 'test_helper'
 class BCDD::Contract::UnitInvariantTest < Minitest::Test
   class ShoppingCart
     module Input
-      cannot_be_nan    = ->(val, err) { err << '%p cannot be nan' if val.respond_to?(:nan?) && val.nan? }
-      cannot_be_inf    = ->(val, err) { err << '%p cannot be infinite' if val.respond_to?(:infinite?) && val.infinite? }
-      must_be_filled   = ->(val, err) { err << 'item name must be filled' if val.empty? }
-      must_be_positive = ->(label) { ->(val, err) { err << "#{label} (%p) must be positive" unless val.positive? } }
+      cannot_be_nan  = ->(val, err) { err << '%p cannot be nan' if val.respond_to?(:nan?) && val.nan? }
+      cannot_be_inf  = ->(val, err) { err << '%p cannot be infinite' if val.respond_to?(:infinite?) && val.infinite? }
+      must_be_filled = ->(val, err) { err << 'item name must be filled' if val.empty? }
+      must_be_positive = ->(label) { ->(val, err) { val.positive? or err << "#{label} (%p) must be positive" } }
 
-      ItemName    = ::BCDD::Contract::Unit[::String]  & must_be_filled
-      Quantity    = ::BCDD::Contract::Unit[::Integer] & must_be_positive['quantity']
-      ValidNumber = ::BCDD::Contract::Unit[::Numeric] & cannot_be_nan & cannot_be_inf
+      ItemName    = ::BCDD::Contract[::String]  & must_be_filled
+      Quantity    = ::BCDD::Contract[::Integer] & must_be_positive['quantity']
+      ValidNumber = ::BCDD::Contract[::Numeric] & cannot_be_nan & cannot_be_inf
 
       PricePerUnit = ValidNumber & must_be_positive['price per unit']
     end
 
     module Items
       module Contract
-        cannot_be_negative = ->(val, err) { err << '%p cannot be negative' if val.negative? }
+        cannot_be_negative = ->(val, err) { val.negative? and err << '%p cannot be negative' }
 
-        ItemQuantity = ::BCDD::Contract::Unit[::Integer] & cannot_be_negative
+        ItemQuantity = ::BCDD::Contract[::Integer] & cannot_be_negative
 
-        MustBeValid = ::BCDD::Contract.unit ->(items, err) do
+        MustBeValid = ::BCDD::Contract[->(items, err) do
           items.each do |name, data|
             quantity_errors       = ItemQuantity[data[:quantity]].errors
             item_name_errors      = Input::ItemName[name].errors
@@ -33,7 +33,7 @@ class BCDD::Contract::UnitInvariantTest < Minitest::Test
 
             err << "#{name}: #{item_errors.join(', ')}" unless item_errors.empty?
           end
-        end
+        end]
       end
     end
 
@@ -59,8 +59,8 @@ class BCDD::Contract::UnitInvariantTest < Minitest::Test
 
         item = items[item_name]
 
-        ::BCDD::Contract.error!("item (#{item_name}) not found")                     if item.nil?
-        ::BCDD::Contract.error!("item (#{item_name}) not enough quantity to remove") if quantity > item[:quantity]
+        ::BCDD::Contract.assert!(item_name, 'item (%p) not found')
+        ::BCDD::Contract.refute!(item_name, 'item (%p) not enough quantity to remove') { quantity > item[:quantity] }
 
         item[:quantity] -= quantity
       end
