@@ -18,6 +18,9 @@ Layout/ExtraSpacing:
 Layout/MultilineMethodCallIndentation:
   Enabled: false
 
+Layout/FirstHashElementIndentation:
+  Enabled: false
+
 Lint/BinaryOperatorWithIdenticalOperands:
   Exclude:
     - test/**/*.rb
@@ -77,6 +80,30 @@ Metrics/BlockLength:
 Metrics/ClassLength:
   Exclude:
     - test/**/*.rb
+
+Metrics/MethodLength:
+  Exclude:
+    - lib/bcdd/contract.rb
+
+Metrics/AbcSize:
+  Exclude:
+    - lib/bcdd/contract.rb
+    - lib/bcdd/contract/list.rb
+    - lib/bcdd/contract/map/pairs.rb
+    - lib/bcdd/contract/map/schema.rb
+
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - lib/bcdd/contract.rb
+    - lib/bcdd/contract/list.rb
+    - lib/bcdd/contract/map/pairs.rb
+    - lib/bcdd/contract/map/schema.rb
+
+Metrics/PerceivedComplexity:
+  Exclude:
+    - lib/bcdd/contract.rb
+    - lib/bcdd/contract/map/pairs.rb
+    - lib/bcdd/contract/map/schema.rb
 
 Minitest/MultipleAssertions:
   Enabled: false

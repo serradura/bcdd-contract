@@ -1,18 +1,15 @@
 # frozen_string_literal: true
 
-module BCDD::Contract::Unit
-  class Checking
-    attr_reader :value
+module BCDD::Contract
+  module Core::Checking
+    attr_reader :value, :errors
 
-    def initialize(strategy, value)
-      @value = value
-      @errors = []
-
-      strategy.call(value, @errors)
+    def initialize(_checker, _value)
+      raise Error, 'not implemented'
     end
 
     def valid?
-      @errors.empty?
+      errors.empty?
     end
 
     def invalid?
@@ -21,18 +18,12 @@ module BCDD::Contract::Unit
 
     alias errors? invalid?
 
-    def errors
-      return @errors if @errors.frozen?
-
-      @errors = @errors.flat_map { |error| format(error, value) }.freeze
-    end
-
     def errors_message
-      errors.join(', ')
+      raise Error, 'not implemented'
     end
 
     def raise_validation_errors!
-      raise ::BCDD::Contract::Error, errors_message if invalid?
+      raise Error, errors_message if invalid?
     end
 
     def value_or_raise_validation_errors!

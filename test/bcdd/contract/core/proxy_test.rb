@@ -6,7 +6,7 @@ module BCDD::Contract
   class CoreProxyTest < Minitest::Test
     module Calc
       class Contract < Core::Proxy
-        ValidNumber = ::BCDD::Contract::Unit.new ->(value, err) do
+        ValidNumber = ::BCDD::Contract.unit ->(value, err) do
           err << '%p must be numeric' and return unless value.is_a?(::Numeric)
 
           err << '%p cannot be nan' and return if value.respond_to?(:nan?) && value.nan?
@@ -28,7 +28,7 @@ module BCDD::Contract
           +ValidNumber[object.subtract(a, b)]
         end
 
-        CannotBeZero = ::BCDD::Contract::Unit.new ->(arg, err) do
+        CannotBeZero = ::BCDD::Contract.unit ->(arg, err) do
           err << '%p cannot be zero' if arg.zero?
         end
 

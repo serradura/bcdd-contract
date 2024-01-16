@@ -1,0 +1,21 @@
+module BCDD::Contract
+  module List
+    class Checking
+      include Core::Checking
+
+      def initialize: (untyped, untyped) -> void
+
+      def errors_message: () -> ::String
+
+      private
+
+      def validate: (untyped, Array[String]) -> void
+    end
+
+    module Checker
+      include Core::Checker
+    end
+
+    def self.new: (untyped) -> untyped
+  end
+end

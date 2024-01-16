@@ -1,59 +1,40 @@
-module BCDD::Contract::Unit
-  class Checking
-    attr_reader errors: ::Array[::String]
+module BCDD::Contract
+  module Unit
+    class Checking
+      include Core::Checking
 
-    attr_reader value: untyped
+      def initialize: (::Proc, untyped) -> void
 
-    def initialize: (::Proc, untyped) -> void
+      def errors_message: () -> ::String
+    end
 
-    def valid?: () -> bool
-    def invalid?: () -> bool
+    module Checker
+      include Core::Checker
 
-    alias errors? invalid?
+      SequenceMapper: ::Proc
 
-    def errors_message: () -> ::String
+      def & : (untyped) -> Module
 
-    def raise_validation_errors!: () -> void
+      ParallelMapper: ::Proc
 
-    def value_or_raise_validation_errors!: () -> untyped
+      def | : (untyped) -> Module
+    end
 
-    alias value! value_or_raise_validation_errors!
-    alias assert! value_or_raise_validation_errors!
+    class Factory
+      include ::Singleton
+
+      private attr_reader cache: Hash[::Module, ::Module]
+
+      def self.instance: () -> Factory
+
+      def initialize: () -> void
+
+      def build: (untyped) -> untyped
+      def unit: (untyped) -> untyped
+      def type: (untyped) -> untyped
+      def new: (untyped) -> untyped
+    end
+
+    def self.new: (untyped) -> ::Module
   end
-
-  module Checker
-    def []: (untyped) -> Checking
-
-    def ===: (untyped) -> bool
-
-    def to_proc: () -> ::Proc
-
-    SequenceMapper: ::Proc
-
-    def & : (untyped) -> Module
-
-    def invariant: (untyped) { (untyped) -> untyped } -> untyped
-
-    attr_reader checker: ::Proc
-
-    def setup: (Proc) -> void
-  end
-
-  class Factory
-    include ::Singleton
-
-    private attr_reader cache: Hash[::Module, ::Module]
-
-    def self.instance: () -> Factory
-
-    def initialize: () -> void
-
-    def call: (untyped) -> untyped
-    def unit: (untyped) -> untyped
-    def type: (untyped) -> untyped
-  end
-
-  def self.new: (untyped) -> ::Module
-
-  def self.[]: (untyped) -> ::Module
 end

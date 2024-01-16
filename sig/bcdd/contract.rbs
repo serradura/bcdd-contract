@@ -9,8 +9,6 @@ module BCDD
 
     def self.configuration: { (Config) -> void } -> Config
 
-    def self.unit: (Proc) -> ::Module
-
     def self.proxy: (always_enabled: bool) { (::Class) -> void } -> ::Class
 
     def self.error!: (String) -> void
@@ -20,6 +18,13 @@ module BCDD
 
     def self.assert: (untyped, String) { (untyped) -> bool } -> untyped
     def self.refute: (untyped, String) { (untyped) -> bool } -> untyped
+
+    def self.new: (untyped) -> untyped
+    def self.unit: (untyped) -> ::Module
+    def self.list: (untyped) -> ::Module
+    def self.schema: (Hash[untyped, untyped]) -> ::Module
+    def self.pairs: (Hash[untyped, untyped]) -> ::Module
+    def self.to_proc: () -> ::Proc
 
     def self.[]: (untyped) -> ::Module
   end

@@ -20,6 +20,7 @@ target :lib do
   # configure_code_diagnostics do |hash|             # You can setup everything yourself
   #   hash[D::Ruby::NoMethod] = :information
   # end
+  configure_code_diagnostics(D::Ruby.default.merge(D::Ruby::UnknownConstant => :information))
 end
 
 # target :test do

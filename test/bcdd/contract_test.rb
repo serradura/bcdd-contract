@@ -3,102 +3,79 @@
 require 'test_helper'
 
 class BCDD::ContractTest < Minitest::Test
-  NotNil = BCDD::Contract.unit(->(value, err) { value.nil? and err << 'cannot be nil' })
+  ListOfStrings = BCDD::Contract([String])
 
-  NumericProxy = BCDD::Contract.proxy do
-    def +(other)
-      other.is_a?(::Numeric) or raise TypeError, "#{other} is not a number"
+  test 'list of strings' do
+    assert_operator ListOfStrings, :===, %w[a b c]
+    assert_operator ListOfStrings, :===, Set['a', 'b', 'c']
 
-      object + other
-    end
+    refute_operator ListOfStrings, :===, ['a', 1, 'c']
+    refute_operator ListOfStrings, :===, Set['a', 1, 'c']
   end
 
-  test 'that it has a version number' do
-    refute_nil ::BCDD::Contract::VERSION
+  SetOfSymbols = BCDD::Contract(Set[Symbol])
+
+  test 'set of symbols' do
+    assert_operator SetOfSymbols, :===, %i[a b c]
+    assert_operator SetOfSymbols, :===, Set[:a, :b, :c]
+
+    refute_operator SetOfSymbols, :===, [:a, 1, :c]
+    refute_operator SetOfSymbols, :===, Set[:a, 1, :c]
   end
 
-  test '.unit' do
-    assert_predicate NotNil[1], :valid?
-    refute_predicate NotNil[nil], :valid?
+  test 'invalid list checker creation' do
+    assert_raises(ArgumentError, 'must be one contract checker') { BCDD::Contract([String, Symbol]) }
   end
 
-  test '.proxy' do
-    assert_operator NumericProxy, :<, BCDD::Contract::Proxy
+  MiscOfCheckers = BCDD::Contract([{
+    a: Integer,
+    b: String,
+    c: {
+      d: [Integer],
+      e: { f: [String] }
+    }
+  }])
 
-    assert_equal 3, NumericProxy[1] + 2
+  test 'misc of checkers' do
+    assert_operator MiscOfCheckers, :===, [{
+      a: 1,
+      b: '2',
+      c: {
+        d: [3, 4],
+        e: {
+          f: ['4']
+        }
+      }
+    }]
 
-    assert_raises(TypeError, ':a is not a number') { NumericProxy[1] + :a }
-  end
+    data = [
+      {
+        a: 1,
+        b: '2',
+        c: {
+          d: ['3'],
+          e: {
+            f: [4]
+          }
+        }
+      },
+      {},
+      nil,
+      {
+        a: '1'
+      }
+    ]
 
-  test '.error!' do
-    assert_raises(BCDD::Contract::Error, 'An awesome message') { BCDD::Contract.error! 'An awesome message' }
-  end
+    refute_operator MiscOfCheckers, :===, data
 
-  test '.assert!' do
-    object = Object.new
-
-    assert_same true, BCDD::Contract.assert!(true, 'must be true')
-    assert_same object, BCDD::Contract.assert!(object, 'must be truthy')
-    assert_same(3, BCDD::Contract.assert!(3, 'block outcome must be true') { _1 == 3 })
-    assert_same(4, BCDD::Contract.assert!(4, 'block outcome must be truthy') { object })
-
-    assert_raises(BCDD::Contract::Error, 'false') { BCDD::Contract.assert!(false, '%p') }
-    assert_raises(BCDD::Contract::Error, 'An awesome message') { BCDD::Contract.assert!(false, 'An awesome message') }
-    assert_raises(BCDD::Contract::Error, '(1) block returned false') do
-      BCDD::Contract.assert!(1, '(%p) block returned falsey') { |one| one == 2 }
-    end
-    assert_raises(BCDD::Contract::Error, '2) block returned falsey') do
-      BCDD::Contract.assert!(2, '(%p) block returned falsey') { nil }
-    end
-  end
-
-  test '.assert' do
-    object = Object.new
-
-    assert_same true, BCDD::Contract.assert(true, 'must be true')
-    assert_same object, BCDD::Contract.assert(object, 'must be truthy')
-    assert_same(3, BCDD::Contract.assert(3, 'block outcome must be true') { _1 == 3 })
-    assert_same(4, BCDD::Contract.assert(4, 'block outcome must be truthy') { object })
-
-    assert_raises(BCDD::Contract::Error, 'false') { BCDD::Contract.assert(false, '%p') }
-    assert_raises(BCDD::Contract::Error, 'An awesome message') { BCDD::Contract.assert(false, 'An awesome message') }
-    assert_raises(BCDD::Contract::Error, '(1) block returned falsey') do
-      BCDD::Contract.assert(1, '(%p) block returned falsey') { |one| one == 2 }
-    end
-    assert_raises(BCDD::Contract::Error, '2) block returned falsey') do
-      BCDD::Contract.assert(2, '(%p) block returned falsey') { nil }
-    end
-  end
-
-  test '.refute!' do
-    assert_same false, BCDD::Contract.refute!(false, 'must be falsey')
-    assert_nil BCDD::Contract.refute!(nil, 'must be falsey')
-    assert_same(3, BCDD::Contract.refute!(3, 'block outcome must be false') { _1 != 3 })
-    assert_same(4, BCDD::Contract.refute!(4, 'block outcome must be falsey') { nil })
-
-    assert_raises(BCDD::Contract::Error, 'true') { BCDD::Contract.refute!(true, '%p') }
-    assert_raises(BCDD::Contract::Error, 'An awesome message') { BCDD::Contract.refute!(true, 'An awesome message') }
-    assert_raises(BCDD::Contract::Error, '(1) block returned true') do
-      BCDD::Contract.refute!(1, '(%p) block returned true') { |one| one == 1 }
-    end
-    assert_raises(BCDD::Contract::Error, '(2) block returned truthy') do
-      BCDD::Contract.refute!(2, '(%p) block returned truthy') { Object.new }
-    end
-  end
-
-  test '.refute' do
-    assert_same false, BCDD::Contract.refute!(false, 'must be falsey')
-    assert_nil BCDD::Contract.refute!(nil, 'must be falsey')
-    assert_same(3, BCDD::Contract.refute!(3, 'block outcome must be false') { _1 != 3 })
-    assert_same(4, BCDD::Contract.refute!(4, 'block outcome must be falsey') { nil })
-
-    assert_raises(BCDD::Contract::Error, 'true') { BCDD::Contract.refute!(true, '%p') }
-    assert_raises(BCDD::Contract::Error, 'An awesome message') { BCDD::Contract.refute!(true, 'An awesome message') }
-    assert_raises(BCDD::Contract::Error, '(1) block returned true') do
-      BCDD::Contract.refute!(1, '(%p) block returned true') { |one| one == 1 }
-    end
-    assert_raises(BCDD::Contract::Error, '(2) block returned truthy') do
-      BCDD::Contract.refute!(2, '(%p) block returned truthy') { Object.new }
-    end
+    assert_equal(
+      [
+        '0: (c: (d: 0: "3" must be a Integer; e: (f: 0: 4 must be a String)))',
+        '1: (a: is missing; b: is missing; c: is missing)',
+        '2: (nil: must be a Hash)',
+        '3: (a: "1" must be a Integer; b: is missing; c: is missing)'
+      ],
+      MiscOfCheckers[data].errors
+    )
   end
 end

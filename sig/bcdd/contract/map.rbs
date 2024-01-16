@@ -1,0 +1,45 @@
+module BCDD::Contract
+  module Map
+    module Pairs
+      class Checking
+        include Core::Checking
+
+        def initialize: (untyped, untyped) -> void
+
+        def errors_message: () -> ::String
+
+        private
+
+        def validate: (untyped, untyped) -> void
+      end
+
+      module Checker
+        include Core::Checker
+      end
+
+      def self.new: (untyped) -> Module
+    end
+
+    module Schema
+      class Checking
+        include Core::Checking
+
+        def initialize: (untyped, untyped) -> void
+
+        ErrorsMsg: ::Proc
+
+        def errors_message: () -> ::String
+
+        private
+
+        def validate: (untyped, Array[String]) -> void
+      end
+
+      module Checker
+        include Core::Checker
+      end
+
+      def self.new: (untyped) -> Module
+    end
+  end
+end

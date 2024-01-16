@@ -1,0 +1,60 @@
+module BCDD::Contract
+  module Core
+    class Proxy
+      attr_reader object: untyped
+
+      def self.new: (untyped) -> Proxy
+
+      def self.to_proc: () -> Proc
+
+      def initialize: (untyped) -> Proxy
+    end
+
+    module Checking
+      attr_reader errors: ::Array[::String]
+
+      attr_reader value: untyped
+
+      def initialize: (untyped, untyped) -> void
+
+      def valid?: () -> bool
+      def invalid?: () -> bool
+
+      alias errors? invalid?
+
+      def errors_message: () -> ::String
+
+      def raise_validation_errors!: () -> void
+
+      def value_or_raise_validation_errors!: () -> untyped
+
+      alias value! value_or_raise_validation_errors!
+      alias assert! value_or_raise_validation_errors!
+    end
+
+    module Checker
+      def []: (untyped) -> Checking
+
+      def ===: (untyped) -> bool
+
+      def to_proc: () -> ::Proc
+
+      def invariant: (untyped) { (untyped) -> untyped } -> untyped
+
+      def checking: () -> untyped
+
+      def strategy: () -> untyped
+
+      def const_get: (untyped, bool) -> untyped
+    end
+
+    module Factory
+      module Callbacks
+        def included: (untyped) -> void
+        def extended: (untyped) -> void
+      end
+
+      def self.new: (untyped, untyped, untyped) -> ::Module
+    end
+  end
+end

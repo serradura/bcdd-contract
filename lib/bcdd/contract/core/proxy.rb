@@ -1,23 +1,19 @@
 # frozen_string_literal: true
 
 module BCDD::Contract
-  module Core
-    class Proxy
-      def self.[](object)
-        new(object)
-      end
+  class Core::Proxy
+    def self.[](object)
+      new(object)
+    end
 
-      def self.to_proc
-        ->(object) { new(object) }
-      end
+    def self.to_proc
+      ->(object) { new(object) }
+    end
 
-      attr_reader :object
+    attr_reader :object
 
-      def initialize(object)
-        @object = object
-      end
+    def initialize(object)
+      @object = object
     end
   end
-
-  private_constant :Core
 end
