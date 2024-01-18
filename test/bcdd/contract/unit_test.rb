@@ -117,7 +117,7 @@ module BCDD::Contract
     end
 
     test 'an instance checker' do
-      str_checker = Unit.new(String)
+      str_checker = ::BCDD::Contract.unit(String)
 
       assert_instance_of(Module, str_checker)
 

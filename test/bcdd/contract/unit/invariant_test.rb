@@ -6,13 +6,13 @@ class BCDD::Contract::UnitInvariantTest < Minitest::Test
   class ShoppingCart
     module Item
       module Contract
-        cannot_be_nan = ->(val, err) { err << '%p cannot be nan' if val.respond_to?(:nan?) && val.nan? }
-        cannot_be_inf = ->(val, err) { err << '%p cannot be infinite' if val.respond_to?(:infinite?) && val.infinite? }
-        must_be_positive = ->(label) { ->(val, err) { val.positive? or err << "#{label} (%p) must be positive" } }
+        cannot_be_nan = ->(val) { val.respond_to?(:nan?) and val.nan? and '%p cannot be nan' }
+        cannot_be_inf = ->(val) { val.respond_to?(:infinite?) and val.infinite? and '%p cannot be infinite' }
+        must_be_positive = ->(label) { ->(val) { val.positive? or "#{label} (%p) must be positive" } }
 
         PricePerUnit = ::BCDD::Contract[::Numeric] & cannot_be_nan & cannot_be_inf & must_be_positive['price per unit']
         Quantity     = ::BCDD::Contract[::Integer] & must_be_positive['quantity']
-        Name         = ::BCDD::Contract[::String]  & ->(val, err) { err << 'item name must be filled' if val.empty? }
+        Name         = ::BCDD::Contract[::String]  & ->(val) { val.empty? and 'item name must be filled' }
 
         NameAndData = ::BCDD::Contract.pairs(Name => { quantity: Quantity, price_per_unit: PricePerUnit })
       end

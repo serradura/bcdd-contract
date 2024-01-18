@@ -20,7 +20,7 @@ module BCDD
     def self.refute: (untyped, String) { (untyped) -> bool } -> untyped
 
     def self.new: (untyped) -> untyped
-    def self.unit: (untyped) -> ::Module
+    def self.unit: (untyped) -> untyped
     def self.list: (untyped) -> ::Module
     def self.schema: (Hash[untyped, untyped]) -> ::Module
     def self.pairs: (Hash[untyped, untyped]) -> ::Module

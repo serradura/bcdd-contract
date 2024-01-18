@@ -6,21 +6,21 @@ module BCDD::Contract
   #
   # @example
   # class Calculation < ::BCDD::Contract::Proxy
-  #   ValidNumber = ::BCDD::Contract::Unit.new ->(value, err) do
+  #   ValidNumber = ::BCDD::Contract[->(value, err) do
   #     err << '%p must be numeric' and return unless value.is_a?(::Numeric)
   #     err << '%p cannot be nan' and return if value.respond_to?(:nan?) && value.nan?
   #     err << '%p cannot be infinite' if value.respond_to?(:infinite?) && value.infinite?
-  #   end
+  #   end]
   #
-  #   CannotBeZero = ::BCDD::Contract::Unit.new ->(arg, err) do
+  #   CannotBeZero = ::BCDD::Contract[->(arg, err) do
   #     err << '%p cannot be zero' if arg.zero?
-  #   end
+  #   end]
   #
   #   def divide(a, b)
-  #     ValidNumber[a]
-  #     ValidNumber[b] && CannotBeZero[b]
+  #     +ValidNumber[a]
+  #     +ValidNumber[b] && +CannotBeZero[b]
   #
-  #     object.divide(a, b).tap(&ValidNumber)
+  #     +ValidNumber[object.divide(a, b)]
   #   end
   #
   #   # ... other methods ...

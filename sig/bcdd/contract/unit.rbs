@@ -13,28 +13,38 @@ module BCDD::Contract
 
       SequenceMapper: ::Proc
 
-      def & : (untyped) -> Module
+      def & : (untyped) -> ::Module
 
       ParallelMapper: ::Proc
 
-      def | : (untyped) -> Module
+      def | : (untyped) -> ::Module
+
+      private
+
+      def compose: (untyped, Proc) -> ::Module
     end
 
     class Factory
       include ::Singleton
 
-      private attr_reader cache: Hash[::Module, ::Module]
+      private attr_reader cache: Hash[::Module | ::Symbol, ::Module]
 
       def self.instance: () -> Factory
 
       def initialize: () -> void
 
       def build: (untyped) -> untyped
+      def cached: (::Symbol, untyped) -> untyped
+      def read_cache: (::Symbol) -> untyped
+
+      ArityOneHandler: ::Proc
+
       def unit: (untyped) -> untyped
       def type: (untyped) -> untyped
       def new: (untyped) -> untyped
     end
 
     def self.new: (untyped) -> ::Module
+    def self.cached: (::Hash[::Symbol, untyped]) -> ::Hash[::Symbol, untyped]
   end
 end
