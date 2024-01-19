@@ -24,27 +24,16 @@ module BCDD::Contract
       def compose: (untyped, Proc) -> ::Module
     end
 
-    class Factory
-      include ::Singleton
-
-      private attr_reader cache: Hash[::Module | ::Symbol, ::Module]
-
-      def self.instance: () -> Factory
-
-      def initialize: () -> void
-
-      def build: (untyped) -> untyped
-      def cached: (::Symbol, untyped) -> untyped
-      def read_cache: (::Symbol) -> untyped
+    module Factory
+      def self.new: (untyped) -> untyped
+      def self.build: (untyped) -> untyped
 
       ArityOneHandler: ::Proc
 
-      def unit: (untyped) -> untyped
-      def type: (untyped) -> untyped
-      def new: (untyped) -> untyped
+      def self.lambda!: (untyped) -> untyped
+      def self.type!: (untyped) -> untyped
     end
 
     def self.new: (untyped) -> ::Module
-    def self.cached: (::Hash[::Symbol, untyped]) -> ::Hash[::Symbol, untyped]
   end
 end

@@ -39,11 +39,11 @@ module BCDD::Contract
     private
 
     def compose(other, mapper)
-      other = Unit::Factory.instance.build(other)
+      other = Unit::Factory.build(other)
 
       composed_strategy = mapper.call(strategy, other.strategy)
 
-      Unit::Factory.instance.new(composed_strategy)
+      Unit::Factory.new(composed_strategy)
     end
 
     private_constant :SequenceMapper, :ParallelMapper

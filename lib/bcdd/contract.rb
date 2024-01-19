@@ -5,6 +5,7 @@ require 'singleton'
 
 require_relative 'contract/version'
 require_relative 'contract/core'
+require_relative 'contract/registry'
 require_relative 'contract/config'
 require_relative 'contract/unit'
 require_relative 'contract/proxy'
@@ -61,6 +62,8 @@ module BCDD
 
       return schema(arg) if arg.is_a?(::Hash)
 
+      return Registry.fetch(arg) if arg.is_a?(::Symbol)
+
       return unit(arg) unless arg.is_a?(::Array) || arg.is_a?(::Set)
 
       list = arg.to_a.flatten
@@ -68,6 +71,20 @@ module BCDD
       return list(list[0]) if list.size == 1
 
       raise ::ArgumentError, 'must be one contract checker'
+    end
+
+    singleton_class.send(:alias_method, :[], :new)
+
+    def self.to_proc
+      ->(arg) { self[arg] }
+    end
+
+    def self.register(**kargs)
+      kargs.empty? and raise ::ArgumentError, 'must be passed as keyword arguments'
+
+      kargs.each_with_object({}) do |(key, val), memo|
+        memo[key] = Registry.write(key, new(val))
+      end
     end
 
     def self.unit(arg)
@@ -92,12 +109,6 @@ module BCDD
 
       Map::Pairs.new(new(key) => new(val))
     end
-
-    def self.to_proc
-      ->(arg) { self[arg] }
-    end
-
-    singleton_class.send(:alias_method, :[], :new)
   end
 
   def self.Contract(arg)

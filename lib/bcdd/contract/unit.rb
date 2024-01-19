@@ -32,9 +32,7 @@ module BCDD::Contract
     require_relative 'unit/factory'
 
     def self.new(arg)
-      return Factory.instance.build(arg) unless arg.is_a?(::Hash)
-
-      arg.each_with_object({}) { |(name, value), hash| hash[name] = Factory.instance.cached(name, value) }
+      Factory.build(arg)
     end
   end
 

@@ -1,0 +1,25 @@
+module BCDD::Contract
+  class Registry
+    include ::Singleton
+
+    OPTIONS: ::Set[::Symbol]
+    UNIT: ::Symbol
+    LIST: ::Symbol
+    PAIRS: ::Symbol
+    SCHEMA: ::Symbol
+
+    Kind: ::Proc
+
+    attr_reader store: ::Hash[::Symbol, ::Hash[::Symbol, untyped]]
+    attr_reader names: ::Hash[::Symbol, ::Symbol]
+
+    def self.instance: () -> Registry
+
+    def initialize: () -> void
+
+    def self.write: (untyped, untyped) -> untyped
+    def self.fetch: (::Symbol) -> untyped
+    def self.unit: (untyped) -> untyped
+    def self.read: (::Symbol, ::Symbol) -> untyped
+  end
+end
