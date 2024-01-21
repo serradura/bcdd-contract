@@ -1,0 +1,60 @@
+# frozen_string_literal: true
+
+if RUBY_VERSION <= '3.1'
+  puts 'This example requires Ruby 3.1 or higher.'
+  exit! 1
+end
+
+require_relative 'config'
+
+task :default do
+  puts '==================='
+  puts 'Design by Contract '
+  puts '==================='
+  puts
+
+  cart = ShoppingCart.new
+
+  puts '--  Adding items  --'
+  puts
+
+  cart.add_item('Apple', 5, 1.5)
+
+  puts "Total Price: $#{cart.total_price}"
+  puts
+
+  puts '--  Removing items  --'
+  puts
+
+  cart.remove_item('Apple', 2)
+
+  puts "Total Price: $#{cart.total_price}"
+  puts
+
+  puts '--  Invalid input  --'
+  puts
+
+  begin
+    cart.remove_item('Apple', 4)
+  rescue StandardError => e
+    puts e.message
+  end
+
+  puts
+  puts '--------------------------------------------'
+  puts '--  Violating the invariant deliberately  --'
+  puts '--------------------------------------------'
+  puts
+
+  [
+    -> { cart.instance_variable_set(:@items, { 'Apple' => { quantity: [-1, '1'].sample, price_per_unit: 1.5 } }) },
+    -> { cart.instance_variable_set(:@items, { 'Apple' => { quantity: 1, price_per_unit: [-1.5, '1.5'].sample } }) },
+    -> { cart.instance_variable_set(:@items, { ['', nil].sample => { quantity: 1, price_per_unit: 1.5 } }) }
+  ].sample.call
+
+  [
+    -> { cart.add_item('Orange', 1, 1) },
+    -> { cart.remove_item('Apple', 1) },
+    -> { cart.total_price }
+  ].sample.call
+end
