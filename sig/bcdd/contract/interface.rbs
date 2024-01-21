@@ -1,0 +1,9 @@
+module BCDD::Contract::Interface
+  METHODS: ::String
+
+  def self.included: (untyped) -> void
+
+  module AlwaysEnabled
+    def self.included: (untyped) -> void
+  end
+end

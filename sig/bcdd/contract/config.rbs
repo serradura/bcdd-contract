@@ -3,6 +3,7 @@ module BCDD::Contract
     include ::Singleton
 
     attr_accessor proxy_enabled: bool
+    attr_accessor interface_enabled: bool
     attr_accessor assertions_enabled: bool
 
     def self.instance: () -> Config

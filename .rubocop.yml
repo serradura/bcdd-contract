@@ -49,6 +49,10 @@ Style/Lambda:
 Style/ParallelAssignment:
   Enabled: false
 
+Style/Semicolon:
+  Exclude:
+    - test/**/*.rb
+
 Style/SingleLineMethods:
   Enabled: false
 
