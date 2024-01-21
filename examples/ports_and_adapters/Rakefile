@@ -1,0 +1,68 @@
+# frozen_string_literal: true
+
+if RUBY_VERSION <= '3.1'
+  puts 'This example requires Ruby 3.1 or higher.'
+  exit! 1
+end
+
+require_relative 'config'
+
+require_relative 'test/user_test/repository'
+
+task :default do
+  puts
+  puts '------------------'
+  puts 'Ports and Adapters'
+  puts '------------------'
+
+  # -- User creation instances
+
+  db_creation = User::Creation.new(repository: User::Record::Repository)
+
+  memory_creation = User::Creation.new(repository: UserTest::Repository.new)
+
+  puts
+  puts '--  Valid input  --'
+  puts
+
+  db_creation.call(name: 'Jane', email: 'jane@foo.com')
+
+  memory_creation.call(name: 'John', email: 'john@bar.com')
+
+  puts
+  puts '--  Invalid input  --'
+  puts
+
+  db_creation.call(name: 'Jane', email: 'jane')
+
+  memory_creation.call(name: '', email: nil)
+end
+
+# Output sample: rake BCDD_CONTRACT_ENABLED=true
+#
+# --  Valid input  --
+#
+# Created user: #<struct User::Data id=1, name="Jane", email="jane@foo.com">
+# Created user: #<struct User::Data id=1, name="John", email="john@bar.com">
+#
+# --  Invalid input  --
+#
+# rake aborted!
+# BCDD::Contract::Error: "jane" must be an email (BCDD::Contract::Error)
+# lib/bcdd/contract/unit.rb:52:in `+@'
+# examples/ports_and_adapters/lib/user/repository.rb:20:in `create'
+# examples/ports_and_adapters/lib/user/creation.rb:10:in `call'
+# examples/ports_and_adapters/Rakefile:35:in `block in <top (required)>'
+
+# Output sample: rake BCDD_CONTRACT_ENABLED=false
+#
+#
+# --  Valid input  --
+#
+# Created user: #<struct User::Data id=1, name="Jane", email="jane@foo.com">
+# Created user: #<struct User::Data id=1, name="John", email="john@bar.com">
+#
+# --  Invalid input  --
+#
+# Created user: #<struct User::Data id=2, name="Jane", email="jane">
+# Created user: #<struct User::Data id=3, name="", email=nil>

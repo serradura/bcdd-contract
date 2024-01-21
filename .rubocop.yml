@@ -7,7 +7,12 @@ AllCops:
   NewCops: enable
   TargetRubyVersion: 2.7
   Exclude:
-    - 'example/**/*.rb'
+    - 'examples/**/*'
+    - 'vendor/**/*'
+    - 'spec/fixtures/**/*'
+    - 'tmp/**/*'
+    - '.git/**/*'
+    - 'bin/*'
 
 Layout/LineLength:
   Max: 120
