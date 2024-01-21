@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors = ['Rodrigo Serradura']
   spec.email = ['rodrigo.serradura@gmail.com']
 
-  spec.summary = 'Provides abstractions to define simple and powerful interfaces.'
-  spec.description = 'Provides abstractions to define simple and powerful interfaces.'
+  spec.summary = 'Reliable contract definition, data validation, and type checking for Ruby.'
+  spec.description = 'Reliable contract definition, data validation, and type checking for Ruby.'
   spec.homepage = 'https://github.com/b-cdd/contract'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 2.7.0'

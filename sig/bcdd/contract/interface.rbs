@@ -1,5 +1,8 @@
 module BCDD::Contract::Interface
-  METHODS: ::String
+  module Callbacks
+    def self.included: (untyped) -> void
+    def self.extended: (untyped) -> void
+  end
 
   def self.included: (untyped) -> void
 

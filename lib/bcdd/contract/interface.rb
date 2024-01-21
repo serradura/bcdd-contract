@@ -2,23 +2,23 @@
 
 module BCDD::Contract
   module Interface
-    METHODS = <<~RUBY
-      def self.extended(base)
+    module Callbacks
+      def extended(base)
         base.singleton_class.prepend(self::Methods)
       end
 
-      def self.included(base)
+      def included(base)
         base.prepend(self::Methods)
       end
-    RUBY
+    end
 
     def self.included(base)
-      base.module_eval(METHODS, __FILE__, __LINE__) if Config.instance.interface_enabled
+      base.extend(Callbacks) if Config.instance.interface_enabled
     end
 
     module AlwaysEnabled
       def self.included(base)
-        base.module_eval(Interface::METHODS, __FILE__, __LINE__)
+        base.extend(Interface::Callbacks)
       end
     end
   end
