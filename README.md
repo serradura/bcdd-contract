@@ -573,7 +573,7 @@ Use `is_a?` to ensure that the class/object implements the expected methods.
 ```ruby
 class User::Creation
   def initialize(repository)
-    repository.is_a?(User::Repository) or raise ArgumentError, "repository must be a User::Repository"
+    repository => User::Repository
 
     @repository = repository
   end

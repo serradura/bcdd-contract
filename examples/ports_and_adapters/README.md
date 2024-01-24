@@ -208,7 +208,7 @@ end
 module User
   class Creation
     def initialize(repository:)
-      repository.is_a?(Repository) or raise ArgumentError, "Expected a User::Repository, got #{repository}"
+      repository => Repository
 
       @repository = repository
     end
