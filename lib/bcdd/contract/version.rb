@@ -2,6 +2,6 @@
 
 module BCDD
   module Contract
-    VERSION = '0.1.0'
+    VERSION = '1.0.0.beta1'
   end
 end
