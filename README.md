@@ -143,7 +143,7 @@ Check the [examples](examples) directory to see different applications of `bcdd-
 
 1. [Ports and Adapters](examples/ports_and_adapters) - Implements the Ports and Adapters pattern. It uses [**`BCDD::Contract::Interface`**](#bcddcontractinterface) to provide an interface from the application's core to other layers.
 
-2. [Anti-Corruption Layer](examples/anti_corruption_layer) - Implements the Anti-Corruption Layer pattern. It uses the [**BCDD::Contract::Proxy**](#bcddcontractproxy) to define an inteface for a set of adapters, which will be used to translate an external interface (`vendors`) to the application's core interface.
+2. [Anti-Corruption Layer](examples/anti_corruption_layer) - Implements the Anti-Corruption Layer pattern. It uses the [**`BCDD::Contract::Proxy`**](#bcddcontractproxy) to define an inteface for a set of adapters, which will be used to translate an external interface (`vendors`) to the application's core interface.
 
 3. [Business Processes](examples/business_processes) - Implements a business process using the [`bcdd-result`](https://github.com/B-CDD/result) gem and uses the `bcdd-contract` to define its contract.
 

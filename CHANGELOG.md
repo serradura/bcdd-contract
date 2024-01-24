@@ -1,4 +1,6 @@
-## [Unreleased]
+## Unreleased
+
+## 1.0.0.beta1 (2024-01-23)
 
 ### Added
 
