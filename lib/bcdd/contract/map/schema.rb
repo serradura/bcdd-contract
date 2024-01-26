@@ -32,9 +32,9 @@ module BCDD::Contract
 
           vchecking = svalue[vvalue]
 
-          errors[skey] = vchecking.errors and next if vchecking.invalid?
-
           errors[skey] = ['must be a Hash'] and next if svalue.is_a?(Map::Schema::Checker) && !vvalue.is_a?(::Hash)
+
+          errors[skey] = vchecking.errors and next if vchecking.invalid?
         end
       end
     end
