@@ -11,7 +11,7 @@ module BCDD::Contract
     CannotBeNaN      = ::BCDD::Contract.unit(cannot_be_nan)
     IsNumeric        = ::BCDD::Contract.unit(Numeric)
 
-    ValidNumber = IsNumeric & CannotBeNaN & CannotBeInfinity
+    ValidNumber = (IsNumeric & CannotBeNaN & CannotBeInfinity) | nil
 
     test 'the checking: argument validation' do
       err1 = assert_raises(ArgumentError) { ::BCDD::Contract.unit(Object.new) }
@@ -37,6 +37,8 @@ module BCDD::Contract
       assert ValidNumber === 1r
       assert ValidNumber === 1.0
 
+      assert_operator ValidNumber, :===, nil
+
       refute_operator ValidNumber, :===, '1'
       refute_operator ValidNumber, :===, (0.0 / 0.0)
       refute_operator ValidNumber, :===, (1.0 / 0.0)
@@ -55,7 +57,7 @@ module BCDD::Contract
       assert_equal(1r, ValidNumber[1r].value_or_raise_validation_errors!)
       assert_in_delta(1.0, ValidNumber[1.0].value_or_raise_validation_errors!)
 
-      assert_raises(BCDD::Contract::Error, '"1" must be a Numeric') do
+      assert_raises(BCDD::Contract::Error, '"1" must be a Numeric OR "1" must be a NilClass') do
         ValidNumber['1'].value_or_raise_validation_errors!
       end
       assert_raises(BCDD::Contract::Error, 'NaN cannot be nan') do
@@ -112,8 +114,8 @@ module BCDD::Contract
       assert_predicate checking, :invalid?
       assert_predicate checking, :errors?
 
-      assert_equal(['"1" must be a Numeric'], checking.errors)
-      assert_equal('"1" must be a Numeric', checking.errors_message)
+      assert_equal(['"1" must be a Numeric OR "1" must be a NilClass'], checking.errors)
+      assert_equal('"1" must be a Numeric OR "1" must be a NilClass', checking.errors_message)
     end
 
     test 'an instance checker' do

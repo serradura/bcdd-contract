@@ -71,9 +71,9 @@ class BCDD::ContractTest < Minitest::Test
     assert_equal(
       [
         '0: (c: (d: 0: "3" must be a Integer; e: (f: 0: 4 must be a String)))',
-        '1: (a: is missing; b: is missing; c: is missing)',
+        '1: (a: nil must be a Integer; b: nil must be a String; c: must be a Hash)',
         '2: (nil: must be a Hash)',
-        '3: (a: "1" must be a Integer; b: is missing; c: is missing)'
+        '3: (a: "1" must be a Integer; b: nil must be a String; c: must be a Hash)'
       ],
       MiscOfCheckers[data].errors
     )

@@ -30,10 +30,9 @@ module BCDD::Contract
         schema.each do |skey, svalue|
           vvalue = value[skey]
 
-          errors[skey] = ['is missing'] and next if vvalue.nil?
-          errors[skey] = ['must be a Hash'] and next if svalue.is_a?(Map::Schema::Checker) && !vvalue.is_a?(::Hash)
-
           vchecking = svalue[vvalue]
+
+          errors[skey] = ['must be a Hash'] and next if svalue.is_a?(Map::Schema::Checker) && !vvalue.is_a?(::Hash)
 
           errors[skey] = vchecking.errors and next if vchecking.invalid?
         end

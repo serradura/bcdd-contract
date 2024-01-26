@@ -23,12 +23,13 @@ class BCDD::Contract::MapSchemaNestedTest < Minitest::Test
     refute_empty checking.errors
     assert_instance_of Hash, checking.errors
 
-    assert_equal ['is missing'], checking.errors[:int]
-    assert_equal ['is missing'], checking.errors[:float]
-    assert_equal ['is missing'], checking.errors[:to_sym]
-    assert_equal ['is missing'], checking.errors[:enum]
+    assert_equal ['nil must be a Integer'], checking.errors[:int]
+    assert_equal ['nil must be a Float'], checking.errors[:float]
+    assert_equal ['must be a Hash'], checking.errors[:to_sym]
+    assert_equal ['must be a Hash'], checking.errors[:enum]
 
-    expected_error = '(int: is missing; float: is missing; enum: is missing; to_sym: is missing)'
+    expected_error = '(int: nil must be a Integer; float: nil must be a Float; enum: must be a Hash; ' \
+                     'to_sym: must be a Hash)'
 
     assert_equal(expected_error, checking.errors_message)
 
@@ -68,27 +69,28 @@ class BCDD::Contract::MapSchemaNestedTest < Minitest::Test
       {
         int: ['"1" must be a Integer'],
         float: ['"1.0" must be a Float'],
-        to_sym: ['is missing'],
+        to_sym: ['must be a Hash'],
         enum: ['must be a Hash']
       },
       checking1.errors
     )
 
     assert_equal(
-      '(int: "1" must be a Integer; float: "1.0" must be a Float; enum: must be a Hash; to_sym: is missing)',
+      '(int: "1" must be a Integer; float: "1.0" must be a Float; enum: must be a Hash; to_sym: must be a Hash)',
       checking1.errors_message
     )
 
     assert_equal(
       {
-        to_sym: { sym: ['is missing'], str: ['1 must be a String'] },
-        enum: { array: ['1 must be a Array'], hash: ['is missing'] }
+        to_sym: { sym: ['nil must be a Symbol'], str: ['1 must be a String'] },
+        enum: { array: ['1 must be a Array'], hash: ['nil must be a Hash'] }
       },
       checking2.errors
     )
 
     assert_equal(
-      '(enum: (array: 1 must be a Array; hash: is missing); to_sym: (sym: is missing; str: 1 must be a String))',
+      '(enum: (array: 1 must be a Array; hash: nil must be a Hash); to_sym: (sym: nil must be a Symbol; ' \
+      'str: 1 must be a String))',
       checking2.errors_message
     )
 
