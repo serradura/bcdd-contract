@@ -25,11 +25,11 @@ class BCDD::Contract::MapSchemaNestedTest < Minitest::Test
 
     assert_equal(['nil must be a Integer'], checking.errors[:int])
     assert_equal(['nil must be a Float'], checking.errors[:float])
-    assert_equal({"nil"=>["must be a Hash"]}, checking.errors[:to_sym])
-    assert_equal({"nil"=>["must be a Hash"]}, checking.errors[:enum])
+    assert_equal({ 'nil' => ['must be a Hash'] }, checking.errors[:to_sym])
+    assert_equal({ 'nil' => ['must be a Hash'] }, checking.errors[:enum])
 
-    expected_error = '(int: nil must be a Integer; float: nil must be a Float; enum: (nil: must be a Hash);' \
-      ' to_sym: (nil: must be a Hash))'
+    expected_error = '(int: nil must be a Integer; float: nil must be a Float; enum: (nil: must be a Hash); ' \
+                     'to_sym: (nil: must be a Hash))'
 
     assert_equal(expected_error, checking.errors_message)
 
@@ -68,30 +68,30 @@ class BCDD::Contract::MapSchemaNestedTest < Minitest::Test
     assert_equal(
       {
         int: ['"1" must be a Integer'],
-        enum: {"1"=>["must be a Hash"]},
+        enum: { '1' => ['must be a Hash'] },
         float: ['"1.0" must be a Float'],
-        to_sym: {"nil"=>["must be a Hash"]}
+        to_sym: { 'nil' => ['must be a Hash'] }
       },
       checking1.errors
     )
 
     assert_equal(
-      '(int: "1" must be a Integer; float: "1.0" must be a Float; enum: (1: must be a Hash);' \
-        ' to_sym: (nil: must be a Hash))',
+      '(int: "1" must be a Integer; float: "1.0" must be a Float; enum: (1: must be a Hash); ' \
+      'to_sym: (nil: must be a Hash))',
       checking1.errors_message
     )
 
     assert_equal(
       {
-        to_sym: { sym: ["nil must be a Symbol"], str: ['1 must be a String'] },
-        enum: { array: ['1 must be a Array'], hash: ["nil must be a Hash"] }
+        to_sym: { sym: ['nil must be a Symbol'], str: ['1 must be a String'] },
+        enum: { array: ['1 must be a Array'], hash: ['nil must be a Hash'] }
       },
       checking2.errors
     )
 
     assert_equal(
-      '(enum: (array: 1 must be a Array; hash: nil must be a Hash); to_sym: (sym: nil must be a Symbol;' \
-        ' str: 1 must be a String))',
+      '(enum: (array: 1 must be a Array; hash: nil must be a Hash); to_sym: (sym: nil must be a Symbol; ' \
+      'str: 1 must be a String))',
       checking2.errors_message
     )
 

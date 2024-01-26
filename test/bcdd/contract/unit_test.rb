@@ -36,7 +36,7 @@ module BCDD::Contract
       assert ValidNumber === 1
       assert ValidNumber === 1r
       assert ValidNumber === 1.0
-      assert ValidNumber === nil
+      assert_nil ValidNumber
 
       refute_operator ValidNumber, :===, '1'
       refute_operator ValidNumber, :===, (0.0 / 0.0)
