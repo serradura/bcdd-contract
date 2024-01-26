@@ -11,6 +11,8 @@ module BCDD::Contract
 
       return Registry.unit(arg) if arg.is_a?(::Symbol)
 
+      return type!(::NilClass) if arg.nil?
+
       arg.is_a?(::Proc) ? lambda!(arg) : type!(arg)
     end
 
