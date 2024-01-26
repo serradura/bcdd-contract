@@ -18,10 +18,10 @@ class BCDD::Contract::MapSchemaFlatTest < Minitest::Test
     refute_empty checking.errors
     assert_instance_of Hash, checking.errors
 
-    assert_equal ['is missing'], checking.errors[:int]
-    assert_equal ['is missing'], checking.errors[:float]
+    assert_equal ['nil must be a Integer'], checking.errors[:int]
+    assert_equal ['nil must be a Float'], checking.errors[:float]
 
-    expected_error = '(int: is missing; float: is missing)'
+    expected_error = '(int: nil must be a Integer; float: nil must be a Float)'
 
     assert_equal(expected_error, checking.errors_message)
 
