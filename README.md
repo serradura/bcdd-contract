@@ -19,11 +19,12 @@
     - [Lambda Based](#lambda-based)
     - [Type Based](#type-based)
     - [Union Based](#union-based)
+      - [Using `nil` to define optional checkers](#using-nil-to-define-optional-checkers)
   - [Data Structure Checkers](#data-structure-checkers)
     - [List Schema](#list-schema)
     - [Hash Schema](#hash-schema)
     - [Hash key/value Pairs Schema](#hash-keyvalue-pairs-schema)
-  - [Registered Contract Checkers](#registered-contract-checkers)
+  - [Registered Checkers](#registered-checkers)
   - [Defining Interfaces](#defining-interfaces)
     - [`BCDD::Contract::Interface`](#bcddcontractinterface)
     - [`BCDD::Contract::Proxy`](#bcddcontractproxy)
@@ -291,6 +292,16 @@ checking.errors # ["[] must be filled"]
 
 <p align="right"><a href="#-bcddcontract">⬆️ &nbsp;back to top</a></p>
 
+##### Using `nil` to define optional checkers
+
+You can use `nil` to create optional contract checkers.
+
+```ruby
+IsStringOrNil = BCDD::Contract[String] | nil
+```
+
+<p align="right"><a href="#-bcddcontract">⬆️ &nbsp;back to top</a></p>
+
 ### Data Structure Checkers
 
 #### List Schema
@@ -422,7 +433,7 @@ checking.errors
 
 <p align="right"><a href="#-bcddcontract">⬆️ &nbsp;back to top</a></p>
 
-### Registered Contract Checkers
+### Registered Checkers
 
 Sometimes you need to use the same checker in different places. To avoid code duplication, you can register a checker and use it later.
 

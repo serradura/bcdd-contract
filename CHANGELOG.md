@@ -41,3 +41,5 @@
 
 - Add `BCDD::Contract.register` to register a contract checker to be used by `BCDD::Contract[]` and `BCDD::Contract()`.
   - The registering requires a hash where the keys (symbols) are the names/alias and the values are the contract checkers.
+
+- Add `nil` as a valid contract checker. Use it to create optional contract checkers. Example: `BCDD::Contract[String] | nil`.
