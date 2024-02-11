@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module BCDD::Contract
-  class List
+  module List
     class Checking
       include Core::Checking
 

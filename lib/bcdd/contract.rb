@@ -13,6 +13,7 @@ require_relative 'contract/interface'
 require_relative 'contract/assertions'
 require_relative 'contract/map'
 require_relative 'contract/list'
+require_relative 'contract/kind'
 
 module BCDD
   module Contract

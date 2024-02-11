@@ -29,4 +29,8 @@ class Minitest::Test
       end
     end
   end
+
+  def self.contract
+    ::BCDD::Contract
+  end
 end
