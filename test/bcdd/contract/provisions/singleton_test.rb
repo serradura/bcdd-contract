@@ -2,9 +2,9 @@
 
 require 'test_helper'
 
-class BCDD::Contract::KindUnitTest < Minitest::Test
-  IsEmpty = contract.unit!(name: :empty, check: proc(&:empty?))
-  IsFilled = contract.unit!(name: :filled, check: -> { !_1.empty? })
+class BCDD::Contract::ProvisionsSingletonTest < Minitest::Test
+  IsEmpty = contract.unit!(name: :empty, guard: proc(&:empty?))
+  IsFilled = contract.unit!(name: :filled, guard: -> { !_1.empty? })
 
   test 'unit! creates a new class' do
     assert_kind_of Class, IsEmpty

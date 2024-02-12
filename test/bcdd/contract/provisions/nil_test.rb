@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class BCDD::Contract::KindNilTest < Minitest::Test
+class BCDD::Contract::ProvisionsNilTest < Minitest::Test
   IsNil = contract.nil!
   IsNotNil = contract.not_nil!
 
@@ -10,8 +10,8 @@ class BCDD::Contract::KindNilTest < Minitest::Test
     assert_kind_of Class, IsNil
     assert_kind_of Class, IsNotNil
 
-    assert_operator IsNil, :<, BCDD::Contract::Kind::Object
-    assert_operator IsNotNil, :<, BCDD::Contract::Kind::Object
+    assert_operator IsNil, :<, BCDD::Contract::Provisions::Object
+    assert_operator IsNotNil, :<, BCDD::Contract::Provisions::Object
   end
 
   test 'the value checking' do

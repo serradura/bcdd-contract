@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module BCDD::Contract
-  module Clause
-    class Definition
-      attr_reader :name, :check, :condition
+  module Provisions
+    class Clause
+      attr_reader :name, :guard, :expectation
 
       FreezeCondition = ->(cond) do
         return cond if cond.is_a?(::Module) || cond.frozen?
@@ -11,71 +11,69 @@ module BCDD::Contract
         cond.freeze
       end
 
-      def initialize(name:, check:, condition:)
+      def initialize(name:, guard:, expectation:)
         name.is_a?(Symbol) || Error['name must be a Symbol']
-        check.is_a?(Proc) || Error['check must be a Proc']
+        guard.is_a?(Proc) || Error['guard must be a Proc']
 
         @name = name
-        @check = check
-        @condition = condition.nil? ? true : FreezeCondition[condition]
+        @guard = guard
+        @expectation = expectation.nil? ? true : FreezeCondition[expectation]
 
         freeze
       end
 
       def call(value, violations:)
-        violations[name] = [condition] unless valid?(value)
+        violations[name] = [expectation] unless valid?(value)
 
         violations
       end
 
       def inspect
-        "#{name}(#{condition.inspect})"
+        "#{name}(#{expectation.inspect})"
       end
 
       private
 
       def valid?(value)
-        check.arity == 2 ? check.call(value, condition) : check.call(value)
+        guard.arity == 2 ? guard.call(value, expectation) : guard.call(value)
       end
     end
 
-    module Expectation
-      def clauses
-        @clauses ||= flat_options.each_with_object(Hash.new { |h, k| h[k] = [] }) do |clause, hash|
-          hash[clause.name] << clause.condition
+    module Composition
+      def composition
+        @composition ||= clauses!.each_with_object(Hash.new { |h, k| h[k] = [] }) do |clause, hash|
+          hash[clause.name] << clause.expectation
         end
       end
 
-      protected
-
-      def flat_options
-        options.flat_map { _1.is_a?(Expectation) ? _1.flat_options : _1 }
+      def clauses!
+        options.flat_map { _1.is_a?(Composition) ? _1.clauses! : _1 }
       end
     end
 
     class Singleton
-      include Expectation
+      include Composition
 
-      attr_reader :definition, :options
+      attr_reader :clause, :options
 
-      private :definition
+      private :clause
 
-      def initialize(definition)
-        @options = [definition].freeze
-        @definition = definition
+      def initialize(clause)
+        @clause = clause
+        @options = [clause].freeze
       end
 
       def call(value, violations:)
-        definition.call(value, violations: violations)
+        clause.call(value, violations: violations)
       end
 
       def inspect
-        definition.inspect
+        clause.inspect
       end
     end
 
     class Intersection
-      include Expectation
+      include Composition
 
       attr_reader :options
 
@@ -101,7 +99,7 @@ module BCDD::Contract
     end
 
     class Union
-      include Expectation
+      include Composition
 
       attr_reader :clause1, :clause2, :options
 
@@ -122,8 +120,8 @@ module BCDD::Contract
 
         return violations if violations2.empty?
 
-        violations2.each do |name, conditions|
-          violations1[name] = violations1.key?(name) ? (violations1[name] + conditions).uniq : conditions
+        violations2.each do |name, expectations|
+          violations1[name] = violations1.key?(name) ? (violations1[name] + expectations).uniq : expectations
         end
 
         violations.merge!(violations1)
@@ -133,9 +131,7 @@ module BCDD::Contract
         "(#{clause1.inspect} | #{clause2.inspect})"
       end
     end
-  end
 
-  module Kind
     class Object
       class << self
         attr_accessor :definition
@@ -145,19 +141,11 @@ module BCDD::Contract
         alias [] new
 
         def &(other)
-          other < Kind::Object or Error["argument must be a #{Kind::Object}, but got #{other}"]
-
-          klass = ::Class.new(Kind::Object)
-          klass.send(:definition=, Clause::Intersection.new([definition, other.definition]))
-          klass
+          Provisions.intersection(self, other)
         end
 
         def |(other)
-          other < Kind::Object or Error["argument must be a #{Kind::Object}, but got #{other}"]
-
-          klass = ::Class.new(Kind::Object)
-          klass.send(:definition=, Clause::Union.new(definition, other.definition))
-          klass
+          Provisions.union(self, other)
         end
       end
 
@@ -173,14 +161,38 @@ module BCDD::Contract
         { value: value, violations: violations }
       end
     end
+
+    extend self
+
+    def singleton(name:, guard:, expectation:)
+      clause = Clause.new(name: name, guard: guard, expectation: expectation)
+
+      klass = ::Class.new(Object)
+      klass.send(:definition=, Singleton.new(clause))
+      klass
+    end
+
+    def intersection(current, other)
+      current < Object or Error["argument must be a #{Object}, but got #{current}"]
+      other < Object or Error["argument must be a #{Object}, but got #{other}"]
+
+      klass = ::Class.new(Object)
+      klass.send(:definition=, Intersection.new([current.definition, other.definition]))
+      klass
+    end
+
+    def union(current, other)
+      current < Object or Error["argument must be a #{Object}, but got #{current}"]
+      other < Object or Error["argument must be a #{Object}, but got #{other}"]
+
+      klass = ::Class.new(Object)
+      klass.send(:definition=, Union.new(current.definition, other.definition))
+      klass
+    end
   end
 
-  def self.unit!(name:, check:, condition: nil)
-    clause = Clause::Definition.new(name: name, check: check, condition: condition)
-
-    klass = ::Class.new(Kind::Object)
-    klass.send(:definition=, Clause::Singleton.new(clause))
-    klass
+  def self.unit!(name:, guard:, expectation: nil)
+    Provisions.singleton(name: name, guard: guard, expectation: expectation)
   end
 
   TYPE_CHECK = ->(value, class_or_mod) { value.is_a?(class_or_mod) }
@@ -188,7 +200,7 @@ module BCDD::Contract
   def self.type!(class_or_module)
     class_or_module.is_a?(Module) or Error['argument must be a Class or a Module']
 
-    unit!(name: :type, check: TYPE_CHECK, condition: class_or_module)
+    unit!(name: :type, guard: TYPE_CHECK, expectation: class_or_module)
   end
 
   FORMAT_CHECK = ->(value, format) { format.match?(value) }
@@ -196,11 +208,11 @@ module BCDD::Contract
   def self.format!(format)
     format.is_a?(Regexp) or Error['format must be a Regexp']
 
-    unit!(name: :format, check: FORMAT_CHECK, condition: format)
+    unit!(name: :format, guard: FORMAT_CHECK, expectation: format)
   end
 
-  Nil = unit!(name: :nil, check: ->(value) { value.nil? }, condition: true)
-  NotNil = unit!(name: :nil, check: ->(value) { !value.nil? }, condition: false)
+  Nil = unit!(name: :nil, guard: ->(value) { value.nil? }, expectation: true)
+  NotNil = unit!(name: :nil, guard: ->(value) { !value.nil? }, expectation: false)
 
   def self.nil!
     Nil

@@ -2,10 +2,10 @@
 
 require 'test_helper'
 
-class BCDD::Contract::KindUnionTest < Minitest::Test
+class BCDD::Contract::ProvisionsUnionTest < Minitest::Test
   IsEmailOrNil = (contract.type!(String) & contract.format!(/\A[^@\s]+@[^@\s]+\z/)) | contract.nil!
 
-  is_filled = contract.unit!(name: :filled, check: -> { !_1.empty? })
+  is_filled = contract.unit!(name: :filled, guard: -> { !_1.empty? })
 
   FilledArrayOrHash = (contract.type!(Array) | contract.type!(Hash)) & is_filled
 
@@ -13,8 +13,8 @@ class BCDD::Contract::KindUnionTest < Minitest::Test
     assert_kind_of Class, IsEmailOrNil
     assert_kind_of Class, FilledArrayOrHash
 
-    assert_operator IsEmailOrNil, :<, BCDD::Contract::Kind::Object
-    assert_operator FilledArrayOrHash, :<, BCDD::Contract::Kind::Object
+    assert_operator IsEmailOrNil, :<, BCDD::Contract::Provisions::Object
+    assert_operator FilledArrayOrHash, :<, BCDD::Contract::Provisions::Object
   end
 
   test 'the value checking' do
