@@ -19,21 +19,51 @@ module BCDD::Contract
       def call(value, violations:)
         violations[name] = [condition] unless valid?(value)
 
-        violations.transform_values!(&:freeze).freeze
+        violations
       end
+
+      private
 
       def valid?(value)
         check.arity == 2 ? check.call(value, condition) : check.call(value)
       end
     end
 
+    class Clauses
+      attr_reader :clauses
+
+      def initialize(clauses)
+        clauses.is_a?(Array) || BCDD::Contract.error!('clauses must be an Array')
+
+        @clauses = clauses
+      end
+
+      def call(value, violations:)
+        clauses.each do |clause|
+          break unless violations.empty?
+
+          clause.call(value, violations: violations)
+        end
+
+        violations
+      end
+    end
+
     class Unit
       class << self
-        attr_accessor :clause
+        attr_accessor :clauses
 
-        private :clause=
+        private :clauses=
 
         alias [] new
+
+        def &(other)
+          clauses = Clauses.new(self.clauses.clauses + other.clauses.clauses)
+
+          klass = ::Class.new(Kind::Unit)
+          klass.send(:clauses=, clauses)
+          klass
+        end
       end
 
       attr_reader :violations, :value
@@ -41,7 +71,7 @@ module BCDD::Contract
       def initialize(value)
         @value = value
 
-        @violations = self.class.clause.call(value, violations: {})
+        @violations = self.class.clauses.call(value, violations: {}).freeze
       end
 
       def to_h
@@ -51,8 +81,10 @@ module BCDD::Contract
   end
 
   def self.unit!(name:, check:, condition: nil)
+    clause = Kind::Clause.new(name: name, check: check, condition: condition)
+
     klass = ::Class.new(Kind::Unit)
-    klass.send(:clause=, Kind::Clause.new(name: name, check: check, condition: condition))
+    klass.send(:clauses=, Kind::Clauses.new([clause]))
     klass
   end
 
