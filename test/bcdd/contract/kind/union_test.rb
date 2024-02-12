@@ -7,7 +7,15 @@ class BCDD::Contract::KindUnionTest < Minitest::Test
 
   is_filled = contract.unit!(name: :filled, check: -> { !_1.empty? })
 
-  FilleArrayOrHash = (contract.type!(Array) | contract.type!(Hash)) & is_filled
+  FilledArrayOrHash = (contract.type!(Array) | contract.type!(Hash)) & is_filled
+
+  test 'union creates a new class' do
+    assert_kind_of Class, IsEmailOrNil
+    assert_kind_of Class, FilledArrayOrHash
+
+    assert_operator IsEmailOrNil, :<, BCDD::Contract::Kind::Unit
+    assert_operator FilledArrayOrHash, :<, BCDD::Contract::Kind::Unit
+  end
 
   test 'the value checking' do
     checking0 = IsEmailOrNil.new(nil)
@@ -20,10 +28,10 @@ class BCDD::Contract::KindUnionTest < Minitest::Test
     assert_equal({ value: 1, violations: { type: [String], nil: [true] } }, checking2.to_h)
     assert_equal({ value: '1', violations: { format: [/\A[^@\s]+@[^@\s]+\z/], nil: [true] } }, checking3.to_h)
 
-    checking4 = FilleArrayOrHash.new([1])
-    checking5 = FilleArrayOrHash.new({one: 1})
-    checking6 = FilleArrayOrHash.new([])
-    checking7 = FilleArrayOrHash.new({})
+    checking4 = FilledArrayOrHash.new([1])
+    checking5 = FilledArrayOrHash.new({one: 1})
+    checking6 = FilledArrayOrHash.new([])
+    checking7 = FilledArrayOrHash.new({})
 
     assert_equal({ value: [1], violations: {} }, checking4.to_h)
     assert_equal({ value: {one: 1}, violations: {} }, checking5.to_h)

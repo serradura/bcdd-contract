@@ -2,88 +2,80 @@
 
 module BCDD::Contract
   module Kind
-    class Clause
-      attr_reader :name, :check, :condition
+    module Clause
+      class Definition
+        attr_reader :name, :check, :condition
 
-      def initialize(name:, check:, condition:)
-        name.is_a?(Symbol) || BCDD::Contract.error!('name must be a Symbol')
-        check.is_a?(Proc) || BCDD::Contract.error!('check must be a Proc')
+        def initialize(name:, check:, condition:)
+          name.is_a?(Symbol) || BCDD::Contract.error!('name must be a Symbol')
+          check.is_a?(Proc) || BCDD::Contract.error!('check must be a Proc')
 
-        @name = name
-        @check = check
-        @condition = condition.nil? ? true : condition.freeze
+          @name = name
+          @check = check
+          @condition = condition.nil? ? true : condition.freeze
 
-        freeze
-      end
-
-      def call(value, violations:)
-        violations[name] = [condition] unless valid?(value)
-
-        violations
-      end
-
-      private
-
-      def valid?(value)
-        check.arity == 2 ? check.call(value, condition) : check.call(value)
-      end
-    end
-
-    module Clauses
-      def call(value, violations:)
-        raise NotImplementedError
-      end
-    end
-
-    class Intersection
-      include Clauses
-
-      attr_reader :clauses
-
-      def initialize(clauses)
-        clauses.is_a?(Array) || BCDD::Contract.error!('clauses must be an Array')
-
-        @clauses = clauses
-      end
-
-      def call(value, violations:)
-        clauses.each do |clause|
-          break unless violations.empty?
-
-          clause.call(value, violations: violations)
+          freeze
         end
 
-        violations
-      end
-    end
+        def call(value, violations:)
+          violations[name] = [condition] unless valid?(value)
 
-    class Union
-      include Clauses
-
-      attr_reader :clause1, :clause2
-
-      def initialize(clause1, clause2)
-        clause1.is_a?(Clauses) or BCDD::Contract.error!('clause1 must be a Clauses')
-        clause2.is_a?(Clauses) or BCDD::Contract.error!('clause2 must be a Clauses')
-
-        @clause1 = clause1
-        @clause2 = clause2
-      end
-
-      def call(value, violations:)
-        violations1 = clause1.call(value, violations: {})
-
-        return violations if violations1.empty?
-
-        violations2 = clause2.call(value, violations: {})
-
-        return violations if violations2.empty?
-
-        violations2.each do |name, conditions|
-          violations1[name] = violations1.key?(name) ? (violations1[name] + conditions).uniq : conditions
+          violations
         end
 
-        violations.merge!(violations1)
+        private
+
+        def valid?(value)
+          check.arity == 2 ? check.call(value, condition) : check.call(value)
+        end
+      end
+
+      class Intersection
+        attr_reader :clauses
+
+        def initialize(clauses)
+          clauses.is_a?(Array) || BCDD::Contract.error!('clauses must be an Array')
+
+          @clauses = clauses
+        end
+
+        def call(value, violations:)
+          clauses.each do |clause|
+            break unless violations.empty?
+
+            clause.call(value, violations: violations)
+          end
+
+          violations
+        end
+      end
+
+      class Union
+        attr_reader :clause1, :clause2, :clauses
+
+        private :clause1, :clause2
+
+        def initialize(clause1, clause2)
+          @clause1 = clause1
+          @clause2 = clause2
+          @clauses = [clause1, clause2].freeze
+        end
+
+        def call(value, violations:)
+          violations1 = clause1.call(value, violations: {})
+
+          return violations if violations1.empty?
+
+          violations2 = clause2.call(value, violations: {})
+
+          return violations if violations2.empty?
+
+          violations2.each do |name, conditions|
+            violations1[name] = violations1.key?(name) ? (violations1[name] + conditions).uniq : conditions
+          end
+
+          violations.merge!(violations1)
+        end
       end
     end
 
@@ -96,7 +88,9 @@ module BCDD::Contract
         alias [] new
 
         def &(other)
-          clauses = Intersection.new([self.clauses, other.clauses])
+          other < Kind::Unit or BCDD::Contract.error!("argument must be a #{Kind::Unit}, but got #{other}")
+
+          clauses = Clause::Intersection.new([self.clauses, other.clauses])
 
           klass = ::Class.new(Kind::Unit)
           klass.send(:clauses=, clauses)
@@ -104,7 +98,9 @@ module BCDD::Contract
         end
 
         def |(other)
-          clauses = Union.new(self.clauses, other.clauses)
+          other < Kind::Unit or BCDD::Contract.error!("argument must be a #{Kind::Unit}, but got #{other}")
+
+          clauses = Clause::Union.new(self.clauses, other.clauses)
 
           klass = ::Class.new(Kind::Unit)
           klass.send(:clauses=, clauses)
@@ -127,10 +123,10 @@ module BCDD::Contract
   end
 
   def self.unit!(name:, check:, condition: nil)
-    clause = Kind::Clause.new(name: name, check: check, condition: condition)
+    clause = Kind::Clause::Definition.new(name: name, check: check, condition: condition)
 
     klass = ::Class.new(Kind::Unit)
-    klass.send(:clauses=, Kind::Intersection.new([clause]))
+    klass.send(:clauses=, Kind::Clause::Intersection.new([clause]))
     klass
   end
 
