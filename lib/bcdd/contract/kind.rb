@@ -6,13 +6,19 @@ module BCDD::Contract
       class Definition
         attr_reader :name, :check, :condition
 
+        FreezeCondition = ->(cond) do
+          return cond if cond.is_a?(::Module) || cond.frozen?
+
+          cond.freeze
+        end
+
         def initialize(name:, check:, condition:)
           name.is_a?(Symbol) || BCDD::Contract.error!('name must be a Symbol')
           check.is_a?(Proc) || BCDD::Contract.error!('check must be a Proc')
 
           @name = name
           @check = check
-          @condition = condition.nil? ? true : condition.freeze
+          @condition = condition.nil? ? true : FreezeCondition[condition]
 
           freeze
         end
@@ -27,6 +33,21 @@ module BCDD::Contract
 
         def valid?(value)
           check.arity == 2 ? check.call(value, condition) : check.call(value)
+        end
+      end
+
+      class Singleton
+        attr_reader :definition, :clauses
+
+        private :definition
+
+        def initialize(definition)
+          @definition = definition
+          @clauses = [definition].freeze
+        end
+
+        def call(value, violations:)
+          definition.call(value, violations: violations)
         end
       end
 
@@ -90,20 +111,16 @@ module BCDD::Contract
         def &(other)
           other < Kind::Unit or BCDD::Contract.error!("argument must be a #{Kind::Unit}, but got #{other}")
 
-          clauses = Clause::Intersection.new([self.clauses, other.clauses])
-
           klass = ::Class.new(Kind::Unit)
-          klass.send(:clauses=, clauses)
+          klass.send(:clauses=, Clause::Intersection.new([clauses, other.clauses]))
           klass
         end
 
         def |(other)
           other < Kind::Unit or BCDD::Contract.error!("argument must be a #{Kind::Unit}, but got #{other}")
 
-          clauses = Clause::Union.new(self.clauses, other.clauses)
-
           klass = ::Class.new(Kind::Unit)
-          klass.send(:clauses=, clauses)
+          klass.send(:clauses=, Clause::Union.new(clauses, other.clauses))
           klass
         end
       end
@@ -126,7 +143,7 @@ module BCDD::Contract
     clause = Kind::Clause::Definition.new(name: name, check: check, condition: condition)
 
     klass = ::Class.new(Kind::Unit)
-    klass.send(:clauses=, Kind::Clause::Intersection.new([clause]))
+    klass.send(:clauses=, Kind::Clause::Singleton.new(clause))
     klass
   end
 
