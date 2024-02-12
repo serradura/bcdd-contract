@@ -11,7 +11,7 @@ module BCDD::Contract
 
         @name = name
         @check = check
-        @condition = condition.nil? ? true : condition
+        @condition = condition.nil? ? true : condition.freeze
 
         freeze
       end
