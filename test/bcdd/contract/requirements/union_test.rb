@@ -5,23 +5,20 @@ require 'test_helper'
 class BCDD::Contract::RequirementsUnionTest < Minitest::Test
   IsEmailOrNil = (contract.type!(String) & contract.format!(/\A[^@\s]+@[^@\s]+\z/)) | contract.allow_nil!
 
-  is_filled = contract.unit!(name: :filled, guard: -> { !_1.empty? })
+  is_filled = contract.clause!(name: :filled, guard: -> { !_1.empty? })
 
   FilledArrayOrHash = (contract.type!(Array) | contract.type!(Hash)) & is_filled
 
-  test 'union creates a new class' do
-    assert_kind_of Class, IsEmailOrNil
-    assert_kind_of Class, FilledArrayOrHash
-
-    assert_operator IsEmailOrNil, :<, BCDD::Contract::Requirements::Object
-    assert_operator FilledArrayOrHash, :<, BCDD::Contract::Requirements::Object
+  test 'union object' do
+    assert_instance_of BCDD::Contract::Requirements::Checker, IsEmailOrNil
+    assert_instance_of BCDD::Contract::Requirements::Checker, FilledArrayOrHash
   end
 
   test 'the value checking' do
     checking0 = IsEmailOrNil.new(nil)
-    checking1 = IsEmailOrNil.new('email@example.com')
+    checking1 = IsEmailOrNil['email@example.com']
     checking2 = IsEmailOrNil.new(1)
-    checking3 = IsEmailOrNil.new('1')
+    checking3 = IsEmailOrNil['1']
 
     assert_equal({ value: nil, violations: {} }, checking0.to_h)
     assert_equal({ value: 'email@example.com', violations: {} }, checking1.to_h)
@@ -29,9 +26,9 @@ class BCDD::Contract::RequirementsUnionTest < Minitest::Test
     assert_equal({ value: '1', violations: { format: [/\A[^@\s]+@[^@\s]+\z/], nil: [true] } }, checking3.to_h)
 
     checking4 = FilledArrayOrHash.new([1])
-    checking5 = FilledArrayOrHash.new({ one: 1 })
+    checking5 = FilledArrayOrHash[{ one: 1 }]
     checking6 = FilledArrayOrHash.new([])
-    checking7 = FilledArrayOrHash.new({})
+    checking7 = FilledArrayOrHash[{}]
 
     assert_equal({ value: [1], violations: {} }, checking4.to_h)
     assert_equal({ value: { one: 1 }, violations: {} }, checking5.to_h)

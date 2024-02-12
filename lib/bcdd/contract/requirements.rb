@@ -139,41 +139,13 @@ module BCDD::Contract
       end
     end
 
-    class Object
-      class << self
-        attr_accessor :requirements
-
-        private :requirements=
-
-        alias [] new
-
-        def |(other)
-          Requirements.composition(self, other, strategy: Union)
-        end
-
-        def &(other)
-          Requirements.composition(self, other, strategy: Intersection)
-        end
-
-        def clauses
-          requirements.composition
-        end
-
-        def clause?(name)
-          clauses.key?(name)
-        end
-
-        def clause(name)
-          clauses[name]
-        end
-      end
-
+    class Checking
       attr_reader :violations, :value
 
-      def initialize(value)
+      def initialize(value, requirements)
         @value = value
 
-        @violations = self.class.requirements.call(value, violations: {}).freeze
+        @violations = requirements.call(value, violations: {}).freeze
       end
 
       def to_h
@@ -181,29 +153,58 @@ module BCDD::Contract
       end
     end
 
-    def self.object(clauses)
-      klass = ::Class.new(Object)
-      klass.send(:requirements=, clauses)
-      klass
+    class Checker
+      attr_reader :requirements
+
+      protected :requirements
+
+      def initialize(requirements)
+        @requirements = requirements
+      end
+
+      def |(other)
+        compose(other, with: Union)
+      end
+
+      def &(other)
+        compose(other, with: Intersection)
+      end
+
+      def clauses
+        requirements.composition
+      end
+
+      def clause?(name)
+        clauses.key?(name)
+      end
+
+      def clause(name)
+        clauses[name]
+      end
+
+      def new(value)
+        Checking.new(value, requirements)
+      end
+
+      alias [] new
+
+      private
+
+      def compose(other, with:)
+        new_requirements = with.new(requirements, other.requirements)
+
+        self.class.new(new_requirements)
+      end
     end
 
     def self.singleton(name:, guard:, expectation:)
       clause = Clause.new(name: name, guard: guard, expectation: expectation)
 
-      object(Singleton.new(clause))
-    end
-
-    def self.composition(curr, other, strategy:)
-      curr < Object or Error["argument must be a #{Object}, but got #{curr}"]
-      other < Object or Error["argument must be a #{Object}, but got #{other}"]
-
-      requirements = strategy.new(curr.requirements, other.requirements)
-
-      object(requirements)
+      Checker.new(Singleton.new(clause))
     end
   end
 
-  def self.unit!(name:, guard:, expectation: nil)
+  def self.clause!(name:, guard:, expectation: nil)
     Requirements.singleton(name: name, guard: guard, expectation: expectation)
   end
 
@@ -212,7 +213,7 @@ module BCDD::Contract
   def self.type!(class_or_module)
     class_or_module.is_a?(Module) or Error['argument must be a Class or a Module']
 
-    unit!(name: :type, guard: TYPE_CHECK, expectation: class_or_module)
+    clause!(name: :type, guard: TYPE_CHECK, expectation: class_or_module)
   end
 
   FORMAT_CHECK = ->(value, format) { format.match?(value) }
@@ -220,7 +221,7 @@ module BCDD::Contract
   def self.format!(format)
     format.is_a?(Regexp) or Error['format must be a Regexp']
 
-    unit!(name: :format, guard: FORMAT_CHECK, expectation: format)
+    clause!(name: :format, guard: FORMAT_CHECK, expectation: format)
   end
 
   Nil = Requirements.singleton(name: :nil, guard: ->(value) { value.nil? }, expectation: true)
@@ -231,4 +232,6 @@ module BCDD::Contract
     expectation == false ? NotNil : Nil
   end
   # rubocop:enable Style/OptionalBooleanParameter
+
+  private_constant :TYPE_CHECK, :FORMAT_CHECK
 end

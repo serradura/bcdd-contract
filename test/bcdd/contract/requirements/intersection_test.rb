@@ -5,15 +5,13 @@ require 'test_helper'
 class BCDD::Contract::RequirementsIntersectionTest < Minitest::Test
   IsEmail = contract.type!(String) & contract.format!(/\A[^@\s]+@[^@\s]+\z/)
 
-  test 'intersection creates a new class' do
-    assert_kind_of Class, IsEmail
-
-    assert_operator IsEmail, :<, BCDD::Contract::Requirements::Object
+  test 'intersection object' do
+    assert_instance_of BCDD::Contract::Requirements::Checker, IsEmail
   end
 
   test 'the value checking' do
     checking1 = IsEmail.new('email@example.com')
-    checking2 = IsEmail.new(1)
+    checking2 = IsEmail[1]
     checking3 = IsEmail.new('1')
 
     assert_equal({ value: 'email@example.com', violations: {} }, checking1.to_h)

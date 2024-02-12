@@ -2,31 +2,13 @@
 
 require 'test_helper'
 
-class BCDD::Contract::RequirementsSingletonTest < Minitest::Test
-  IsEmpty = contract.unit!(name: :empty, guard: proc(&:empty?))
-  IsFilled = contract.unit!(name: :filled, guard: -> { !_1.empty? })
+class BCDD::Contract::RequirementsClauseTest < Minitest::Test
+  IsEmpty = contract.clause!(name: :empty, guard: proc(&:empty?))
+  IsFilled = contract.clause!(name: :filled, guard: -> { !_1.empty? })
 
-  test 'unit! creates a new class' do
-    assert_kind_of Class, IsEmpty
-    assert_kind_of Class, IsFilled
-  end
-
-  test 'the constructor alias' do
-    instance1a = IsEmpty['']
-    instance1b = IsEmpty.new('')
-
-    assert_instance_of IsEmpty, instance1a
-    assert_instance_of IsEmpty, instance1b
-
-    assert_equal instance1a.to_h, instance1b.to_h
-
-    instance2a = IsFilled['123']
-    instance2b = IsFilled.new('123')
-
-    assert_instance_of IsFilled, instance2a
-    assert_instance_of IsFilled, instance2b
-
-    assert_equal instance2a.to_h, instance2b.to_h
+  test 'clause! object' do
+    assert_instance_of BCDD::Contract::Requirements::Checker, IsEmpty
+    assert_instance_of BCDD::Contract::Requirements::Checker, IsFilled
   end
 
   test '#value' do
@@ -49,25 +31,25 @@ class BCDD::Contract::RequirementsSingletonTest < Minitest::Test
   end
 
   test 'the value checking' do
-    checking1 = IsEmpty.new('')
+    checking1 = IsEmpty['']
     checking2 = IsEmpty.new([])
 
     assert_equal({ value: '', violations: {} }, checking1.to_h)
     assert_equal({ value: [], violations: {} }, checking2.to_h)
 
-    checking3 = IsEmpty.new('123')
+    checking3 = IsEmpty['123']
     checking4 = IsEmpty.new([1, 2, 3])
 
     assert_equal({ value: '123', violations: { empty: [true] } }, checking3.to_h)
     assert_equal({ value: [1, 2, 3], violations: { empty: [true] } }, checking4.to_h)
 
-    checking5 = IsFilled.new('123')
+    checking5 = IsFilled['123']
     checking6 = IsFilled.new([1, 2, 3])
 
     assert_equal({ value: '123', violations: {} }, checking5.to_h)
     assert_equal({ value: [1, 2, 3], violations: {} }, checking6.to_h)
 
-    checking7 = IsFilled.new('')
+    checking7 = IsFilled['']
     checking8 = IsFilled.new([])
 
     assert_equal({ value: '', violations: { filled: [true] } }, checking7.to_h)
