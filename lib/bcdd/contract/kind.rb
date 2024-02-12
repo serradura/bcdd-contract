@@ -29,7 +29,15 @@ module BCDD::Contract
       end
     end
 
-    class Clauses
+    module Clauses
+      def call(value, violations:)
+        raise NotImplementedError
+      end
+    end
+
+    class Intersection
+      include Clauses
+
       attr_reader :clauses
 
       def initialize(clauses)
@@ -49,6 +57,36 @@ module BCDD::Contract
       end
     end
 
+    class Union
+      include Clauses
+
+      attr_reader :clause1, :clause2
+
+      def initialize(clause1, clause2)
+        clause1.is_a?(Clauses) or BCDD::Contract.error!('clause1 must be a Clauses')
+        clause2.is_a?(Clauses) or BCDD::Contract.error!('clause2 must be a Clauses')
+
+        @clause1 = clause1
+        @clause2 = clause2
+      end
+
+      def call(value, violations:)
+        violations1 = clause1.call(value, violations: {})
+
+        return violations if violations1.empty?
+
+        violations2 = clause2.call(value, violations: {})
+
+        return violations if violations2.empty?
+
+        violations2.each do |name, conditions|
+          violations1[name] = violations1.key?(name) ? (violations1[name] + conditions).uniq : conditions
+        end
+
+        violations.merge!(violations1)
+      end
+    end
+
     class Unit
       class << self
         attr_accessor :clauses
@@ -58,7 +96,15 @@ module BCDD::Contract
         alias [] new
 
         def &(other)
-          clauses = Clauses.new(self.clauses.clauses + other.clauses.clauses)
+          clauses = Intersection.new([self.clauses, other.clauses])
+
+          klass = ::Class.new(Kind::Unit)
+          klass.send(:clauses=, clauses)
+          klass
+        end
+
+        def |(other)
+          clauses = Union.new(self.clauses, other.clauses)
 
           klass = ::Class.new(Kind::Unit)
           klass.send(:clauses=, clauses)
@@ -84,7 +130,7 @@ module BCDD::Contract
     clause = Kind::Clause.new(name: name, check: check, condition: condition)
 
     klass = ::Class.new(Kind::Unit)
-    klass.send(:clauses=, Kind::Clauses.new([clause]))
+    klass.send(:clauses=, Kind::Intersection.new([clause]))
     klass
   end
 
