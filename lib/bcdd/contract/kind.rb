@@ -29,6 +29,10 @@ module BCDD::Contract
           violations
         end
 
+        def inspect
+          "#{name}(#{condition.inspect})"
+        end
+
         private
 
         def valid?(value)
@@ -36,32 +40,54 @@ module BCDD::Contract
         end
       end
 
+      module Expectation
+        def clauses
+          @clauses ||= flat_options.each_with_object(Hash.new { |h, k| h[k] = [] }) do |clause, hash|
+            hash[clause.name] << clause.condition
+          end
+        end
+
+        protected
+
+        def flat_options
+          options.flat_map { _1.is_a?(Expectation) ? _1.flat_options : _1 }
+        end
+      end
+
       class Singleton
-        attr_reader :definition, :clauses
+        include Expectation
+
+        attr_reader :definition, :options
 
         private :definition
 
         def initialize(definition)
+          @options = [definition].freeze
           @definition = definition
-          @clauses = [definition].freeze
         end
 
         def call(value, violations:)
           definition.call(value, violations: violations)
         end
+
+        def inspect
+          definition.inspect
+        end
       end
 
       class Intersection
-        attr_reader :clauses
+        include Expectation
 
-        def initialize(clauses)
-          clauses.is_a?(Array) || BCDD::Contract.error!('clauses must be an Array')
+        attr_reader :options
 
-          @clauses = clauses
+        def initialize(options)
+          options.is_a?(Array) || BCDD::Contract.error!('options must be an Array')
+
+          @options = options
         end
 
         def call(value, violations:)
-          clauses.each do |clause|
+          options.each do |clause|
             break unless violations.empty?
 
             clause.call(value, violations: violations)
@@ -69,17 +95,23 @@ module BCDD::Contract
 
           violations
         end
+
+        def inspect
+          "(#{options.map(&:inspect).join(' & ')})"
+        end
       end
 
       class Union
-        attr_reader :clause1, :clause2, :clauses
+        include Expectation
+
+        attr_reader :clause1, :clause2, :options
 
         private :clause1, :clause2
 
         def initialize(clause1, clause2)
           @clause1 = clause1
           @clause2 = clause2
-          @clauses = [clause1, clause2].freeze
+          @options = [clause1, clause2].freeze
         end
 
         def call(value, violations:)
@@ -97,30 +129,34 @@ module BCDD::Contract
 
           violations.merge!(violations1)
         end
+
+        def inspect
+          "(#{clause1.inspect} | #{clause2.inspect})"
+        end
       end
     end
 
-    class Unit
+    class Object
       class << self
-        attr_accessor :clauses
+        attr_accessor :definition
 
-        private :clauses=
+        private :definition=
 
         alias [] new
 
         def &(other)
-          other < Kind::Unit or BCDD::Contract.error!("argument must be a #{Kind::Unit}, but got #{other}")
+          other < Kind::Object or BCDD::Contract.error!("argument must be a #{Kind::Object}, but got #{other}")
 
-          klass = ::Class.new(Kind::Unit)
-          klass.send(:clauses=, Clause::Intersection.new([clauses, other.clauses]))
+          klass = ::Class.new(Kind::Object)
+          klass.send(:definition=, Clause::Intersection.new([definition, other.definition]))
           klass
         end
 
         def |(other)
-          other < Kind::Unit or BCDD::Contract.error!("argument must be a #{Kind::Unit}, but got #{other}")
+          other < Kind::Object or BCDD::Contract.error!("argument must be a #{Kind::Object}, but got #{other}")
 
-          klass = ::Class.new(Kind::Unit)
-          klass.send(:clauses=, Clause::Union.new(clauses, other.clauses))
+          klass = ::Class.new(Kind::Object)
+          klass.send(:definition=, Clause::Union.new(definition, other.definition))
           klass
         end
       end
@@ -130,7 +166,7 @@ module BCDD::Contract
       def initialize(value)
         @value = value
 
-        @violations = self.class.clauses.call(value, violations: {}).freeze
+        @violations = self.class.definition.call(value, violations: {}).freeze
       end
 
       def to_h
@@ -142,8 +178,8 @@ module BCDD::Contract
   def self.unit!(name:, check:, condition: nil)
     clause = Kind::Clause::Definition.new(name: name, check: check, condition: condition)
 
-    klass = ::Class.new(Kind::Unit)
-    klass.send(:clauses=, Kind::Clause::Singleton.new(clause))
+    klass = ::Class.new(Kind::Object)
+    klass.send(:definition=, Kind::Clause::Singleton.new(clause))
     klass
   end
 

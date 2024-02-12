@@ -10,8 +10,8 @@ class BCDD::Contract::KindTypeTest < Minitest::Test
     assert_kind_of Class, IsString
     assert_kind_of Class, IsSymbol
 
-    assert_operator IsString, :<, BCDD::Contract::Kind::Unit
-    assert_operator IsSymbol, :<, BCDD::Contract::Kind::Unit
+    assert_operator IsString, :<, BCDD::Contract::Kind::Object
+    assert_operator IsSymbol, :<, BCDD::Contract::Kind::Object
   end
 
   test 'the value checking' do

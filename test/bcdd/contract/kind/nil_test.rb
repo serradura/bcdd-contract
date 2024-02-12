@@ -10,8 +10,8 @@ class BCDD::Contract::KindNilTest < Minitest::Test
     assert_kind_of Class, IsNil
     assert_kind_of Class, IsNotNil
 
-    assert_operator IsNil, :<, BCDD::Contract::Kind::Unit
-    assert_operator IsNotNil, :<, BCDD::Contract::Kind::Unit
+    assert_operator IsNil, :<, BCDD::Contract::Kind::Object
+    assert_operator IsNotNil, :<, BCDD::Contract::Kind::Object
   end
 
   test 'the value checking' do

@@ -13,8 +13,8 @@ class BCDD::Contract::KindUnionTest < Minitest::Test
     assert_kind_of Class, IsEmailOrNil
     assert_kind_of Class, FilledArrayOrHash
 
-    assert_operator IsEmailOrNil, :<, BCDD::Contract::Kind::Unit
-    assert_operator FilledArrayOrHash, :<, BCDD::Contract::Kind::Unit
+    assert_operator IsEmailOrNil, :<, BCDD::Contract::Kind::Object
+    assert_operator FilledArrayOrHash, :<, BCDD::Contract::Kind::Object
   end
 
   test 'the value checking' do
@@ -29,12 +29,12 @@ class BCDD::Contract::KindUnionTest < Minitest::Test
     assert_equal({ value: '1', violations: { format: [/\A[^@\s]+@[^@\s]+\z/], nil: [true] } }, checking3.to_h)
 
     checking4 = FilledArrayOrHash.new([1])
-    checking5 = FilledArrayOrHash.new({one: 1})
+    checking5 = FilledArrayOrHash.new({ one: 1 })
     checking6 = FilledArrayOrHash.new([])
     checking7 = FilledArrayOrHash.new({})
 
     assert_equal({ value: [1], violations: {} }, checking4.to_h)
-    assert_equal({ value: {one: 1}, violations: {} }, checking5.to_h)
+    assert_equal({ value: { one: 1 }, violations: {} }, checking5.to_h)
 
     assert_equal({ value: [], violations: { filled: [true] } }, checking6.to_h)
     assert_equal({ value: {}, violations: { filled: [true] } }, checking7.to_h)

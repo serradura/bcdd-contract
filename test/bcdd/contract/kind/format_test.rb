@@ -10,8 +10,8 @@ class BCDD::Contract::KindFormatTest < Minitest::Test
     assert_kind_of Class, UUIDFormat
     assert_kind_of Class, EmailFormat
 
-    assert_operator UUIDFormat, :<, BCDD::Contract::Kind::Unit
-    assert_operator EmailFormat, :<, BCDD::Contract::Kind::Unit
+    assert_operator UUIDFormat, :<, BCDD::Contract::Kind::Object
+    assert_operator EmailFormat, :<, BCDD::Contract::Kind::Object
   end
 
   test 'the value checking' do

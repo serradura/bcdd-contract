@@ -8,7 +8,7 @@ class BCDD::Contract::KindIntersectionTest < Minitest::Test
   test 'intersection creates a new class' do
     assert_kind_of Class, IsEmail
 
-    assert_operator IsEmail, :<, BCDD::Contract::Kind::Unit
+    assert_operator IsEmail, :<, BCDD::Contract::Kind::Object
   end
 
   test 'the value checking' do
