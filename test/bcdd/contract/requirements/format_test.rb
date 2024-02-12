@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class BCDD::Contract::ProvisionsFormatTest < Minitest::Test
+class BCDD::Contract::RequirementsFormatTest < Minitest::Test
   UUIDFormat = contract.format!(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/)
   EmailFormat = contract.format!(/\A[^@\s]+@[^@\s]+\z/)
 
@@ -10,8 +10,8 @@ class BCDD::Contract::ProvisionsFormatTest < Minitest::Test
     assert_kind_of Class, UUIDFormat
     assert_kind_of Class, EmailFormat
 
-    assert_operator UUIDFormat, :<, BCDD::Contract::Provisions::Object
-    assert_operator EmailFormat, :<, BCDD::Contract::Provisions::Object
+    assert_operator UUIDFormat, :<, BCDD::Contract::Requirements::Object
+    assert_operator EmailFormat, :<, BCDD::Contract::Requirements::Object
   end
 
   test 'the value checking' do

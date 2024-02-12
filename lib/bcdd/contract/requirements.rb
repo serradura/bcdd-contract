@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module BCDD::Contract
-  module Provisions
+  class Requirements
     class Clause
       attr_reader :name, :guard, :expectation
 
@@ -41,26 +41,35 @@ module BCDD::Contract
 
     module Composition
       def composition
-        @composition ||= clauses!.each_with_object(Hash.new { |h, k| h[k] = [] }) do |clause, hash|
-          hash[clause.name] << clause.expectation
+        @composition ||= begin
+          expectations_by_name = Hash.new { |h, k| h[k] = [] }
+
+          clauses!
+            .each_with_object(expectations_by_name) { |clause, hash| hash[clause.name] << clause.expectation }
+            .transform_values { _1.uniq.freeze }
+            .freeze
         end
       end
 
       def clauses!
-        options.flat_map { _1.is_a?(Composition) ? _1.clauses! : _1 }
+        clauses.flat_map { _1.is_a?(Composition) ? _1.clauses! : _1 }
+      end
+
+      def clauses
+        Error['must be implemented']
       end
     end
 
     class Singleton
       include Composition
 
-      attr_reader :clause, :options
+      attr_reader :clause, :clauses
 
       private :clause
 
       def initialize(clause)
         @clause = clause
-        @options = [clause].freeze
+        @clauses = [clause].freeze
       end
 
       def call(value, violations:)
@@ -75,16 +84,14 @@ module BCDD::Contract
     class Intersection
       include Composition
 
-      attr_reader :options
+      attr_reader :clauses
 
-      def initialize(options)
-        options.is_a?(Array) || Error['options must be an Array']
-
-        @options = options
+      def initialize(clause1, clause2)
+        @clauses = [clause1, clause2].freeze
       end
 
       def call(value, violations:)
-        options.each do |clause|
+        clauses.each do |clause|
           break unless violations.empty?
 
           clause.call(value, violations: violations)
@@ -94,21 +101,21 @@ module BCDD::Contract
       end
 
       def inspect
-        "(#{options.map(&:inspect).join(' & ')})"
+        "(#{clauses.map(&:inspect).join(' & ')})"
       end
     end
 
     class Union
       include Composition
 
-      attr_reader :clause1, :clause2, :options
+      attr_reader :clause1, :clause2, :clauses
 
       private :clause1, :clause2
 
       def initialize(clause1, clause2)
         @clause1 = clause1
         @clause2 = clause2
-        @options = [clause1, clause2].freeze
+        @clauses = [clause1, clause2].freeze
       end
 
       def call(value, violations:)
@@ -134,18 +141,30 @@ module BCDD::Contract
 
     class Object
       class << self
-        attr_accessor :definition
+        attr_accessor :requirements
 
-        private :definition=
+        private :requirements=
 
         alias [] new
 
-        def &(other)
-          Provisions.intersection(self, other)
+        def |(other)
+          Requirements.composition(self, other, strategy: Union)
         end
 
-        def |(other)
-          Provisions.union(self, other)
+        def &(other)
+          Requirements.composition(self, other, strategy: Intersection)
+        end
+
+        def clauses
+          requirements.composition
+        end
+
+        def clause?(name)
+          clauses.key?(name)
+        end
+
+        def clause(name)
+          clauses[name]
         end
       end
 
@@ -154,7 +173,7 @@ module BCDD::Contract
       def initialize(value)
         @value = value
 
-        @violations = self.class.definition.call(value, violations: {}).freeze
+        @violations = self.class.requirements.call(value, violations: {}).freeze
       end
 
       def to_h
@@ -162,37 +181,30 @@ module BCDD::Contract
       end
     end
 
-    extend self
+    def self.object(clauses)
+      klass = ::Class.new(Object)
+      klass.send(:requirements=, clauses)
+      klass
+    end
 
-    def singleton(name:, guard:, expectation:)
+    def self.singleton(name:, guard:, expectation:)
       clause = Clause.new(name: name, guard: guard, expectation: expectation)
 
-      klass = ::Class.new(Object)
-      klass.send(:definition=, Singleton.new(clause))
-      klass
+      object(Singleton.new(clause))
     end
 
-    def intersection(current, other)
-      current < Object or Error["argument must be a #{Object}, but got #{current}"]
+    def self.composition(curr, other, strategy:)
+      curr < Object or Error["argument must be a #{Object}, but got #{curr}"]
       other < Object or Error["argument must be a #{Object}, but got #{other}"]
 
-      klass = ::Class.new(Object)
-      klass.send(:definition=, Intersection.new([current.definition, other.definition]))
-      klass
-    end
+      requirements = strategy.new(curr.requirements, other.requirements)
 
-    def union(current, other)
-      current < Object or Error["argument must be a #{Object}, but got #{current}"]
-      other < Object or Error["argument must be a #{Object}, but got #{other}"]
-
-      klass = ::Class.new(Object)
-      klass.send(:definition=, Union.new(current.definition, other.definition))
-      klass
+      object(requirements)
     end
   end
 
   def self.unit!(name:, guard:, expectation: nil)
-    Provisions.singleton(name: name, guard: guard, expectation: expectation)
+    Requirements.singleton(name: name, guard: guard, expectation: expectation)
   end
 
   TYPE_CHECK = ->(value, class_or_mod) { value.is_a?(class_or_mod) }
@@ -211,14 +223,12 @@ module BCDD::Contract
     unit!(name: :format, guard: FORMAT_CHECK, expectation: format)
   end
 
-  Nil = unit!(name: :nil, guard: ->(value) { value.nil? }, expectation: true)
-  NotNil = unit!(name: :nil, guard: ->(value) { !value.nil? }, expectation: false)
+  Nil = Requirements.singleton(name: :nil, guard: ->(value) { value.nil? }, expectation: true)
+  NotNil = Requirements.singleton(name: :nil, guard: ->(value) { !value.nil? }, expectation: false)
 
-  def self.nil!
-    Nil
+  # rubocop:disable Style/OptionalBooleanParameter
+  def self.allow_nil!(expectation = true)
+    expectation == false ? NotNil : Nil
   end
-
-  def self.not_nil!
-    NotNil
-  end
+  # rubocop:enable Style/OptionalBooleanParameter
 end

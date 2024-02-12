@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class BCDD::Contract::ProvisionsSingletonTest < Minitest::Test
+class BCDD::Contract::RequirementsSingletonTest < Minitest::Test
   IsEmpty = contract.unit!(name: :empty, guard: proc(&:empty?))
   IsFilled = contract.unit!(name: :filled, guard: -> { !_1.empty? })
 

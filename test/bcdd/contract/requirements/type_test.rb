@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class BCDD::Contract::ProvisionsTypeTest < Minitest::Test
+class BCDD::Contract::RequirementsTypeTest < Minitest::Test
   IsString = contract.type!(String)
   IsSymbol = contract.type!(Symbol)
 
@@ -10,8 +10,8 @@ class BCDD::Contract::ProvisionsTypeTest < Minitest::Test
     assert_kind_of Class, IsString
     assert_kind_of Class, IsSymbol
 
-    assert_operator IsString, :<, BCDD::Contract::Provisions::Object
-    assert_operator IsSymbol, :<, BCDD::Contract::Provisions::Object
+    assert_operator IsString, :<, BCDD::Contract::Requirements::Object
+    assert_operator IsSymbol, :<, BCDD::Contract::Requirements::Object
   end
 
   test 'the value checking' do
