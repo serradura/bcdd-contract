@@ -63,4 +63,12 @@ module BCDD::Contract
 
     unit!(name: :type, check: TYPE_CHECK, condition: class_or_module)
   end
+
+  FORMAT_CHECK = ->(value, format) { format.match?(value) }
+
+  def self.format!(format)
+    format.is_a?(Regexp) or BCDD::Contract.error!('format must be a Regexp')
+
+    unit!(name: :format, check: FORMAT_CHECK, condition: format)
+  end
 end
