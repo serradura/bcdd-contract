@@ -17,9 +17,13 @@ module BCDD::Contract
       end
 
       def call(value, violations:)
-        violations[name] = [condition] unless check.call(value)
+        violations[name] = [condition] unless valid?(value)
 
         violations.transform_values!(&:freeze).freeze
+      end
+
+      def valid?(value)
+        check.arity == 2 ? check.call(value, condition) : check.call(value)
       end
     end
 
@@ -50,5 +54,13 @@ module BCDD::Contract
     klass = ::Class.new(Kind::Unit)
     klass.send(:clause=, Kind::Clause.new(name: name, check: check, condition: condition))
     klass
+  end
+
+  TYPE_CHECK = ->(value, class_or_mod) { value.is_a?(class_or_mod) }
+
+  def self.type!(class_or_module)
+    class_or_module.is_a?(Module) or BCDD::Contract.error!('argument must be a Class or a Module')
+
+    unit!(name: :type, check: TYPE_CHECK, condition: class_or_module)
   end
 end
