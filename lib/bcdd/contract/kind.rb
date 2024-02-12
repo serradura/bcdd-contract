@@ -11,7 +11,7 @@ module BCDD::Contract
 
         @name = name
         @check = check
-        @condition = (condition || true).freeze
+        @condition = condition.nil? ? true : condition
 
         freeze
       end
@@ -102,5 +102,16 @@ module BCDD::Contract
     format.is_a?(Regexp) or BCDD::Contract.error!('format must be a Regexp')
 
     unit!(name: :format, check: FORMAT_CHECK, condition: format)
+  end
+
+  Nil = unit!(name: :nil, check: ->(value) { value.nil? }, condition: true)
+  NotNil = unit!(name: :nil, check: ->(value) { !value.nil? }, condition: false)
+
+  def self.nil!
+    Nil
+  end
+
+  def self.not_nil!
+    NotNil
   end
 end
