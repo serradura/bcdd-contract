@@ -17,7 +17,11 @@ require_relative 'contract/kind'
 
 module BCDD
   module Contract
-    class Error < StandardError; end
+    class Error < StandardError
+      def self.[](message)
+        raise new(message)
+      end
+    end
 
     def self.config
       Config.instance
@@ -36,7 +40,7 @@ module BCDD
     end
 
     def self.error!(message)
-      raise Error, message
+      Error[message]
     end
 
     def self.assert!(value, message, &block)
