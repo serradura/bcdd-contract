@@ -271,26 +271,28 @@ module BCDD::Contract
         call(:type, value)
       end
 
-      # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      def self.clause(name, value)
+        case value
+        when ::Hash then Singleton[name, value.fetch(:guard), value[:expectation]]
+        when ::Proc then Singleton[name, value]
+        else call(name, value)
+        end
+      end
+
+      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def self.with(options)
         type = options.delete(:type)&.then { _1.is_a?(::Array) ? _1.map { |t| type(t) }.reduce(:|) : type(_1) }
 
         allow_nil = options.delete(:allow_nil)&.then { call(:allow_nil, _1) unless _1.nil? }
 
-        other = options.map do |name, val|
-          case val
-          when ::Hash then Singleton[name, val.fetch(:guard), val[:expectation]]
-          when ::Proc then Singleton[name, val]
-          else call(name, val)
-          end
-        end
+        other = options.map { |name, value| clause(name, value) }
 
         checker = type
         checker = (checker ? ([checker] + other) : other).reduce(:&) unless other.empty?
         checker = checker ? checker | allow_nil : allow_nil if allow_nil
         checker
       end
-      # rubocop:enable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     end
   end
 
@@ -314,6 +316,10 @@ module BCDD::Contract
     expectation: ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] },
     reserved: true
   )
+
+  def self.clause(name, value)
+    Requirements::Factory.clause(name, value)
+  end
 
   def self.with(**options)
     Requirements::Factory.with(options)
