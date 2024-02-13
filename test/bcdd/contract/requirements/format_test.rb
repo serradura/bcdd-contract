@@ -5,10 +5,15 @@ require 'test_helper'
 class BCDD::Contract::RequirementsFormatTest < Minitest::Test
   UUIDFormat = contract.with(format: /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/)
   EmailFormat = contract.with(format: /\A[^@\s]+@[^@\s]+\z/)
+  UUIDorEmail = contract.with(format: [
+    /\A[^@\s]+@[^@\s]+\z/,
+    /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
+  ])
 
   test 'the objects' do
     assert_instance_of BCDD::Contract::Requirements::Checker, UUIDFormat
     assert_instance_of BCDD::Contract::Requirements::Checker, EmailFormat
+    assert_instance_of BCDD::Contract::Requirements::Checker, UUIDorEmail
   end
 
   test 'the value checking' do
@@ -33,5 +38,11 @@ class BCDD::Contract::RequirementsFormatTest < Minitest::Test
         violations: { format: [/\A[^@\s]+@[^@\s]+\z/] }
       }, checking4.to_h
     )
+
+    assert_predicate UUIDorEmail['email@example.com'].violations, :empty?
+    assert_predicate UUIDorEmail['e36e451d-b76a-4c4f-89e6-af256f414b5f'].violations, :empty?
+
+    refute_predicate UUIDorEmail['e36e451d-b76a'].violations, :empty?
+    refute_predicate UUIDorEmail['@b76a'].violations, :empty?
   end
 end

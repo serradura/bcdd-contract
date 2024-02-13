@@ -275,14 +275,14 @@ module BCDD::Contract
         case value
         when ::Hash then Singleton[name, value.fetch(:guard), value[:expectation]]
         when ::Proc then Singleton[name, value]
+        when ::Array then value.map { |val| clause(name, val) }.reduce(:|)
         else call(name, value)
         end
       end
 
       # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def self.with(options)
-        type = options.delete(:type)&.then { _1.is_a?(::Array) ? _1.map { |t| type(t) }.reduce(:|) : type(_1) }
-
+        type      = options.delete(:type)&.then { _1.is_a?(::Array) ? _1.map { |t| type(t) }.reduce(:|) : type(_1) }
         allow_nil = options.delete(:allow_nil)&.then { call(:allow_nil, _1) unless _1.nil? }
 
         other = options.map { |name, value| clause(name, value) }
