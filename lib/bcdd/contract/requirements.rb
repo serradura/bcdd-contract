@@ -174,12 +174,10 @@ module BCDD::Contract
         requirements.composition
       end
 
-      def clause?(name)
-        clauses.key?(name)
-      end
+      def clause?(name, expectation = UNDEFINED)
+        has_key = clauses.key?(name)
 
-      def clause(name)
-        clauses[name]
+        expectation == UNDEFINED ? has_key : has_key && clauses[name].include?(expectation)
       end
 
       def new(value)
