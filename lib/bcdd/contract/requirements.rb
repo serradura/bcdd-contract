@@ -29,7 +29,7 @@ module BCDD::Contract
       end
 
       def inspect
-        "#{name}(#{expectation.inspect})"
+        "(#{name} #{expectation.inspect})"
       end
 
       private
@@ -187,6 +187,10 @@ module BCDD::Contract
       end
 
       alias [] new
+
+      def inspect
+        requirements.inspect
+      end
 
       private
 
