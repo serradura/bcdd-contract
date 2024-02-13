@@ -148,6 +148,10 @@ module BCDD::Contract
         @violations = requirements.call(value, violations: {}).freeze
       end
 
+      def violations?
+        !violations.empty?
+      end
+
       def to_h
         { value: value, violations: violations }
       end
@@ -323,5 +327,88 @@ module BCDD::Contract
 
   def self.with(**options)
     Requirements::Factory.with(options)
+  end
+
+  module DataStructure
+    class Checking < Requirements::Checking
+      def to_h
+        { value: value, violations: @violations }
+      end
+
+      def violations
+        @violations.transform_values { _1.is_a?(::Hash) && _1.key?(:violations) ? _1[:violations] : _1 }
+      end
+    end
+
+    class List
+      Checker = ->(list_checker, items_checker) do
+        ->(value, violations:) do
+          list_checker.send(:requirements).call(value, violations: violations)
+
+          unless violations.key?(:type)
+            value.each_with_index do |vval, index|
+              val_checking = items_checker.new(vval)
+
+              violations[index] = val_checking.to_h if val_checking.violations?
+            end
+          end
+
+          violations
+        end
+      end
+
+      attr_reader :list_req, :items_req
+
+      private :list_req, :items_req
+
+      def initialize(list_req, items_req)
+        @list_req = list_req
+        @items_req = items_req
+        @items_checker = Checker[list_req, items_req]
+      end
+
+      def inspect
+        "(#{list_req.inspect} [#{items_req.inspect}])"
+      end
+
+      def clauses
+        list_req.clauses.merge(_items: items_req.clauses)
+      end
+
+      def clause?(name, expectation = UNDEFINED)
+        list_req.clause?(name, expectation)
+      end
+
+      def items_clauses
+        items_req.clauses
+      end
+
+      def items_clause?(name, expectation = UNDEFINED)
+        items_req.clause?(name, expectation)
+      end
+
+      def new(value)
+        Checking.new(value, @items_checker)
+      end
+
+      alias [] new
+    end
+  end
+
+  def self.list!(**options)
+    _items = options.delete(:_items)
+
+    _items or Error[':_items must be provided']
+
+    options[:type] = [::Array, ::Set] unless options.key?(:type)
+
+    list_req = with(**options)
+    items_req = with(**_items)
+
+    DataStructure::List.new(list_req, items_req)
+  end
+
+  def self.list_items!(**options)
+    list!(_items: options)
   end
 end
