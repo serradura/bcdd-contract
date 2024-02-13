@@ -12,8 +12,8 @@ module BCDD::Contract
       end
 
       def initialize(name:, guard:, expectation:)
-        name.is_a?(Symbol) || Error['name must be a Symbol']
-        guard.is_a?(Proc) || Error['guard must be a Proc']
+        name.is_a?(Symbol) || Error['%p must be a Symbol', name]
+        guard.is_a?(Proc) || Error['%p must be a Proc', guard]
 
         @name = name
         @guard = guard
@@ -201,41 +201,114 @@ module BCDD::Contract
       end
     end
 
-    def self.singleton(name:, guard:, expectation:)
-      clause = Clause.new(name: name, guard: guard, expectation: expectation)
+    module Factory
+      class Registry
+        include ::Singleton
 
-      Checker.new(Singleton.new(clause))
+        attr_reader :store, :reserved
+
+        def initialize
+          @store = {}
+          @reserved = ::Set.new
+        end
+
+        def self.write(name, factory, reserved:, force: false)
+          reserved_names = instance.reserved
+
+          reserved_names.include?(name) and raise ::ArgumentError, "#{name} is a reserved name"
+
+          factory_store = instance.store
+
+          !force && factory_store.key?(name) and raise ::ArgumentError, "#{name} already registered"
+
+          reserved_names << name if reserved
+
+          factory_store[name] = factory
+        end
+
+        def self.read(name)
+          factory_store = instance.store
+
+          factory_store.key?(name) or raise(::ArgumentError, format('%p not registered', name))
+
+          factory_store[name]
+        end
+      end
+
+      Singleton = ->(name, guard, expectation) do
+        clause = Clause.new(name: name, guard: guard, expectation: expectation)
+
+        Checker.new(Requirements::Singleton.new(clause))
+      end
+
+      class Instance
+        attr_reader :name, :guard, :expectation
+
+        def initialize(name, guard, expectation)
+          @name = name
+          @guard = guard
+          @expectation = expectation
+
+          freeze
+        end
+
+        def call(expectation)
+          self.expectation&.call(expectation, Error)
+
+          Singleton.call(name, guard, expectation)
+        end
+      end
+
+      def self.register(name:, guard:, expectation: nil, reserved: false)
+        factory = Instance.new(name, guard, expectation)
+
+        Registry.write(name, factory, reserved: reserved)
+      end
+
+      def self.fetch(name)
+        Registry.read(name)
+      end
+    end
+
+    def self.singleton(name:, guard:, expectation:)
+      Factory::Singleton[name, guard, expectation]
     end
   end
+
+  Requirements::Factory.register(
+    name: :type,
+    guard: ->(value, class_or_mod) { value.is_a?(class_or_mod) },
+    expectation: ->(arg, err) { arg.is_a?(::Module) or err['%p must be a Class or a Module', arg] },
+    reserved: true
+  )
+
+  Requirements::Factory.register(
+    name: :format,
+    guard: ->(value, regexp) { regexp.match?(value) },
+    expectation: ->(arg, err) { arg.is_a?(::Regexp) or err['%p must be a Regexp', arg] },
+    reserved: true
+  )
+
+  Requirements::Factory.register(
+    name: :allow_nil,
+    guard: ->(value, bool) { value.nil? == bool },
+    expectation: ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] },
+    reserved: true
+  )
 
   def self.clause!(name:, guard:, expectation: nil)
     Requirements.singleton(name: name, guard: guard, expectation: expectation)
   end
 
-  TYPE_CHECK = ->(value, class_or_mod) { value.is_a?(class_or_mod) }
-
   def self.type!(class_or_module)
-    class_or_module.is_a?(Module) or Error['argument must be a Class or a Module']
-
-    clause!(name: :type, guard: TYPE_CHECK, expectation: class_or_module)
+    Requirements::Factory.fetch(:type).call(class_or_module)
   end
 
-  FORMAT_CHECK = ->(value, format) { format.match?(value) }
-
-  def self.format!(format)
-    format.is_a?(Regexp) or Error['format must be a Regexp']
-
-    clause!(name: :format, guard: FORMAT_CHECK, expectation: format)
+  def self.format!(regexp)
+    Requirements::Factory.fetch(:format).call(regexp)
   end
 
-  Nil = Requirements.singleton(name: :allow_nil, guard: ->(value) { value.nil? }, expectation: true)
-  NotNil = Requirements.singleton(name: :allow_nil, guard: ->(value) { !value.nil? }, expectation: false)
-
-  # rubocop:disable Style/OptionalBooleanParameter
-  def self.allow_nil!(expectation = true)
-    expectation == false ? NotNil : Nil
+  def self.allow_nil!(boolean)
+    Requirements::Factory.fetch(:allow_nil).call(boolean)
   end
-  # rubocop:enable Style/OptionalBooleanParameter
-
-  private_constant :TYPE_CHECK, :FORMAT_CHECK
 end

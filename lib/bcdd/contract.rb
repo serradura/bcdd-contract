@@ -17,8 +17,12 @@ require_relative 'contract/requirements'
 
 module BCDD
   module Contract
+    UNDEFINED = ::Object.new.freeze
+
     class Error < StandardError
-      def self.[](message)
+      def self.[](msg, arg_to_print = UNDEFINED)
+        message = arg_to_print == UNDEFINED ? msg : format(msg, arg_to_print)
+
         raise new(message)
       end
     end

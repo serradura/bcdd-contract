@@ -3,7 +3,7 @@
 require 'test_helper'
 
 class BCDD::Contract::RequirementsUnionTest < Minitest::Test
-  IsEmailOrNil = (contract.type!(String) & contract.format!(/\A[^@\s]+@[^@\s]+\z/)) | contract.allow_nil!
+  IsEmailOrNil = (contract.type!(String) & contract.format!(/\A[^@\s]+@[^@\s]+\z/)) | contract.allow_nil!(true)
 
   is_filled = contract.clause!(name: :filled, guard: -> { !_1.empty? })
 
