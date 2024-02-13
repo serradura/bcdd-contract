@@ -228,8 +228,8 @@ module BCDD::Contract
     clause!(name: :format, guard: FORMAT_CHECK, expectation: format)
   end
 
-  Nil = Requirements.singleton(name: :nil, guard: ->(value) { value.nil? }, expectation: true)
-  NotNil = Requirements.singleton(name: :nil, guard: ->(value) { !value.nil? }, expectation: false)
+  Nil = Requirements.singleton(name: :allow_nil, guard: ->(value) { value.nil? }, expectation: true)
+  NotNil = Requirements.singleton(name: :allow_nil, guard: ->(value) { !value.nil? }, expectation: false)
 
   # rubocop:disable Style/OptionalBooleanParameter
   def self.allow_nil!(expectation = true)

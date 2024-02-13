@@ -22,8 +22,8 @@ class BCDD::Contract::RequirementsUnionTest < Minitest::Test
 
     assert_equal({ value: nil, violations: {} }, checking0.to_h)
     assert_equal({ value: 'email@example.com', violations: {} }, checking1.to_h)
-    assert_equal({ value: 1, violations: { type: [String], nil: [true] } }, checking2.to_h)
-    assert_equal({ value: '1', violations: { format: [/\A[^@\s]+@[^@\s]+\z/], nil: [true] } }, checking3.to_h)
+    assert_equal({ value: 1, violations: { type: [String], allow_nil: [true] } }, checking2.to_h)
+    assert_equal({ value: '1', violations: { format: [/\A[^@\s]+@[^@\s]+\z/], allow_nil: [true] } }, checking3.to_h)
 
     checking4 = FilledArrayOrHash.new([1])
     checking5 = FilledArrayOrHash[{ one: 1 }]

@@ -16,12 +16,12 @@ class BCDD::Contract::RequirementsNilTest < Minitest::Test
     checking2 = IsNil.new('string')
 
     assert_equal({ value: nil, violations: {} }, checking1.to_h)
-    assert_equal({ value: 'string', violations: { nil: [true] } }, checking2.to_h)
+    assert_equal({ value: 'string', violations: { allow_nil: [true] } }, checking2.to_h)
 
     checking3 = IsNotNil[:symbol]
     checking4 = IsNotNil.new(nil)
 
     assert_equal({ value: :symbol, violations: {} }, checking3.to_h)
-    assert_equal({ value: nil, violations: { nil: [false] } }, checking4.to_h)
+    assert_equal({ value: nil, violations: { allow_nil: [false] } }, checking4.to_h)
   end
 end
