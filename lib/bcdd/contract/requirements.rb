@@ -212,7 +212,7 @@ module BCDD::Contract
           @reserved = ::Set.new
         end
 
-        def self.write(name, factory, reserved:, force: false)
+        def self.write(name, factory, reserved:, force:)
           reserved_names = instance.reserved
 
           reserved_names.include?(name) and raise ::ArgumentError, "#{name} is a reserved name"
@@ -235,7 +235,7 @@ module BCDD::Contract
         end
       end
 
-      Singleton = ->(name, guard, expectation) do
+      Singleton = ->(name, guard, expectation = nil) do
         clause = Clause.new(name: name, guard: guard, expectation: expectation)
 
         Checker.new(Requirements::Singleton.new(clause))
@@ -259,19 +259,40 @@ module BCDD::Contract
         end
       end
 
-      def self.register(name:, guard:, expectation: nil, reserved: false)
+      def self.register(name:, guard:, expectation: nil, reserved: false, force: false)
         factory = Instance.new(name, guard, expectation)
 
-        Registry.write(name, factory, reserved: reserved)
+        Registry.write(name, factory, reserved: reserved, force: force)
       end
 
-      def self.fetch(name)
-        Registry.read(name)
+      def self.call(name, value)
+        Registry.read(name).call(value)
       end
-    end
 
-    def self.singleton(name:, guard:, expectation:)
-      Factory::Singleton[name, guard, expectation]
+      def self.type(value)
+        call(:type, value)
+      end
+
+      # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      def self.with(options)
+        type = options.delete(:type)&.then { _1.is_a?(::Array) ? _1.map { |t| type(t) }.reduce(:|) : type(_1) }
+
+        allow_nil = options.delete(:allow_nil)&.then { call(:allow_nil, _1) unless _1.nil? }
+
+        other = options.map do |name, val|
+          case val
+          when ::Hash then Singleton[name, val.fetch(:guard), val[:expectation]]
+          when ::Proc then Singleton[name, val]
+          else call(name, val)
+          end
+        end
+
+        checker = type
+        checker = (checker ? ([checker] + other) : other).reduce(:&) unless other.empty?
+        checker = checker ? checker | allow_nil : allow_nil if allow_nil
+        checker
+      end
+      # rubocop:enable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     end
   end
 
@@ -296,40 +317,7 @@ module BCDD::Contract
     reserved: true
   )
 
-  def self.clause!(name:, guard:, expectation: nil)
-    Requirements.singleton(name: name, guard: guard, expectation: expectation)
-  end
-
-  def self.type!(class_or_module)
-    Requirements::Factory.fetch(:type).call(class_or_module)
-  end
-
-  def self.format!(regexp)
-    Requirements::Factory.fetch(:format).call(regexp)
-  end
-
-  def self.allow_nil!(boolean)
-    Requirements::Factory.fetch(:allow_nil).call(boolean)
-  end
-
-  # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   def self.with(**options)
-    type = options.delete(:type)&.then { _1.is_a?(::Array) ? _1.map { |t| type!(t) }.reduce(:|) : type!(_1) }
-
-    allow_nil = options.delete(:allow_nil)&.then { allow_nil!(_1) unless _1.nil? }
-
-    other = options.map do |name, val|
-      case val
-      when ::Hash then clause!(name: name, guard: val.fetch(:guard), expectation: val.fetch(:expectation))
-      when ::Proc then clause!(name: name, guard: val)
-      else Requirements::Factory.fetch(name).call(val)
-      end
-    end
-
-    checker = type
-    checker = checker ? ([checker] + other).reduce(:&) : other.reduce(:&) unless other.empty?
-    checker = checker ? checker | allow_nil : allow_nil if allow_nil
-    checker
+    Requirements::Factory.with(options)
   end
-  # rubocop:enable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 end

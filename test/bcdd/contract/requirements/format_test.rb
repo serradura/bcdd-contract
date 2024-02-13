@@ -3,10 +3,10 @@
 require 'test_helper'
 
 class BCDD::Contract::RequirementsFormatTest < Minitest::Test
-  UUIDFormat = contract.format!(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/)
-  EmailFormat = contract.format!(/\A[^@\s]+@[^@\s]+\z/)
+  UUIDFormat = contract.with(format: /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/)
+  EmailFormat = contract.with(format: /\A[^@\s]+@[^@\s]+\z/)
 
-  test 'format! object' do
+  test 'the objects' do
     assert_instance_of BCDD::Contract::Requirements::Checker, UUIDFormat
     assert_instance_of BCDD::Contract::Requirements::Checker, EmailFormat
   end

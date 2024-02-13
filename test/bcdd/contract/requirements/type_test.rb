@@ -3,10 +3,10 @@
 require 'test_helper'
 
 class BCDD::Contract::RequirementsTypeTest < Minitest::Test
-  IsString = contract.type!(String)
-  IsSymbol = contract.type!(Symbol)
+  IsString = contract.with(type: String)
+  IsSymbol = contract.with(type: Symbol)
 
-  test 'type! object' do
+  test 'the objects' do
     assert_instance_of BCDD::Contract::Requirements::Checker, IsString
     assert_instance_of BCDD::Contract::Requirements::Checker, IsSymbol
   end

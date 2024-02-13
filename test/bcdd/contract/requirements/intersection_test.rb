@@ -3,9 +3,9 @@
 require 'test_helper'
 
 class BCDD::Contract::RequirementsIntersectionTest < Minitest::Test
-  IsEmail = contract.type!(String) & contract.format!(/\A[^@\s]+@[^@\s]+\z/)
+  IsEmail = contract.with(type: String, format: /\A[^@\s]+@[^@\s]+\z/)
 
-  test 'intersection object' do
+  test 'the objects' do
     assert_instance_of BCDD::Contract::Requirements::Checker, IsEmail
   end
 

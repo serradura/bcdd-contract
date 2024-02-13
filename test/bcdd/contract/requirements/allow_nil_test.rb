@@ -3,10 +3,10 @@
 require 'test_helper'
 
 class BCDD::Contract::RequirementsNilTest < Minitest::Test
-  IsNil = contract.allow_nil!(true)
-  IsNotNil = contract.allow_nil!(false)
+  IsNil = contract.with(allow_nil: true)
+  IsNotNil = contract.with(allow_nil: false)
 
-  test 'allow_nil! object' do
+  test 'the objects' do
     assert_instance_of BCDD::Contract::Requirements::Checker, IsNil
     assert_instance_of BCDD::Contract::Requirements::Checker, IsNotNil
   end

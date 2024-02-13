@@ -3,10 +3,10 @@
 require 'test_helper'
 
 class BCDD::Contract::RequirementsClauseTest < Minitest::Test
-  IsEmpty = contract.clause!(name: :empty, guard: proc(&:empty?))
-  IsFilled = contract.clause!(name: :filled, guard: -> { !_1.empty? })
+  IsEmpty = contract.with(empty: proc(&:empty?))
+  IsFilled = contract.with(filled: -> { !_1.empty? })
 
-  test 'clause! object' do
+  test 'the objects' do
     assert_instance_of BCDD::Contract::Requirements::Checker, IsEmpty
     assert_instance_of BCDD::Contract::Requirements::Checker, IsFilled
   end
