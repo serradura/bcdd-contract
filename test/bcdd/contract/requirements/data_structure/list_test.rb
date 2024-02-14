@@ -3,40 +3,44 @@
 require 'test_helper'
 
 class BCDD::Contract::RequirementsDataStructureListTest < Minitest::Test
-  ListOfString = contract.with(type: [::Array, ::Set], items: { type: String })
-  FilledArrayOfString = contract.with(type: Array, filled: true, items: { type: String })
+  ListOfString = contract.with(type: [::Array, ::Set], schema: { type: String })
+  FilledArrayOfString = contract.with(type: Array, filled: true, schema: { type: String })
 
   test 'the objects' do
-    assert_equal({ type: [Array, Set], _items: { type: [String] } }, ListOfString.clauses)
-
-    assert ListOfString.clause?(:type)
-    assert ListOfString.clause?(:type, Array)
-    assert ListOfString.clause?(:type, Set)
-
     assert_equal '(((type Array) | (type Set)) [(type String)])', ListOfString.inspect
 
-    assert_equal({ type: [String] }, ListOfString.items_clauses)
+    assert_equal({ data: { type: [Array, Set] }, schema: { type: [String] } }, ListOfString.clauses)
 
-    assert ListOfString.items_clause?(:type)
-    assert ListOfString.items_clause?(:type, String)
+    assert_equal({ type: [Array, Set] }, ListOfString.data.clauses)
+
+    assert ListOfString.data.clause?(:type)
+    assert ListOfString.data.clause?(:type, Array)
+    assert ListOfString.data.clause?(:type, Set)
+
+    assert_equal({ type: [String] }, ListOfString.schema.clauses)
+
+    assert ListOfString.schema.clause?(:type)
+    assert ListOfString.schema.clause?(:type, String)
 
     # ---
 
-    assert_equal({ type: [Array], filled: [true], _items: { type: [String] } }, FilledArrayOfString.clauses)
-
-    assert FilledArrayOfString.clause?(:type)
-    assert FilledArrayOfString.clause?(:type, Array)
-    refute FilledArrayOfString.clause?(:type, Set)
-
-    assert FilledArrayOfString.clause?(:filled)
-    assert FilledArrayOfString.clause?(:filled, true)
-
     assert_equal '(((type Array) & (filled true)) [(type String)])', FilledArrayOfString.inspect
 
-    assert_equal({ type: [String] }, FilledArrayOfString.items_clauses)
+    assert_equal({ data: { type: [Array], filled: [true] }, schema: { type: [String] } }, FilledArrayOfString.clauses)
 
-    assert FilledArrayOfString.items_clause?(:type)
-    assert FilledArrayOfString.items_clause?(:type, String)
+    assert_equal({ type: [Array], filled: [true] }, FilledArrayOfString.data.clauses)
+
+    assert FilledArrayOfString.data.clause?(:type)
+    assert FilledArrayOfString.data.clause?(:type, Array)
+    refute FilledArrayOfString.data.clause?(:type, Set)
+
+    assert FilledArrayOfString.data.clause?(:filled)
+    assert FilledArrayOfString.data.clause?(:filled, true)
+
+    assert_equal({ type: [String] }, FilledArrayOfString.schema.clauses)
+
+    assert FilledArrayOfString.schema.clause?(:type)
+    assert FilledArrayOfString.schema.clause?(:type, String)
   end
 
   test 'the value checking' do

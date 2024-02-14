@@ -216,7 +216,7 @@ module BCDD::Contract
 
         def initialize
           @store = {}
-          @reserved = ::Set[:items]
+          @reserved = ::Set[:schema]
         end
 
         def self.write(name, factory, reserved:, force:)
@@ -348,14 +348,30 @@ module BCDD::Contract
       end
     end
 
-    class List
-      Checker = ->(list_checker, items_checker) do
+    RequirementsStruct = Struct.new(:requirements) do
+      def inspect
+        requirements.inspect
+      end
+
+      def clauses
+        requirements.clauses
+      end
+
+      def clause?(name, expectation = UNDEFINED)
+        requirements.clause?(name, expectation)
+      end
+
+      private :requirements
+    end
+
+    class ListSchema
+      Checker = ->(data_requirements, schema_requirements) do
         ->(value, violations:) do
-          list_checker.send(:requirements).call(value, violations: violations)
+          data_requirements.send(:requirements).call(value, violations: violations)
 
           unless violations.key?(:type)
             value.each_with_index do |vval, index|
-              val_checking = items_checker.new(vval)
+              val_checking = schema_requirements.new(vval)
 
               violations[index] = val_checking.to_h if val_checking.violations?
             end
@@ -365,62 +381,62 @@ module BCDD::Contract
         end
       end
 
-      attr_reader :list_req, :items_req
+      attr_reader :data_requirements, :schema_requirements
 
-      private :list_req, :items_req
+      private :data_requirements, :schema_requirements
 
-      def initialize(list_req, items_req)
-        @list_req = list_req
-        @items_req = items_req
-        @items_checker = Checker[list_req, items_req]
+      def initialize(data_requirements, schema_requirements)
+        @data_requirements = data_requirements
+        @schema_requirements = schema_requirements
+        @data_and_schema_checker = Checker[data_requirements, schema_requirements]
       end
 
       def inspect
-        "(#{list_req.inspect} [#{items_req.inspect}])"
+        "(#{data_requirements.inspect} [#{schema_requirements.inspect}])"
       end
 
       def clauses
-        list_req.clauses.merge(_items: items_req.clauses)
+        { data: data_requirements.clauses, schema: schema_requirements.clauses }
       end
 
-      def clause?(name, expectation = UNDEFINED)
-        list_req.clause?(name, expectation)
+      def data
+        @data ||= RequirementsStruct[data_requirements].freeze
       end
 
-      def items_clauses
-        items_req.clauses
-      end
-
-      def items_clause?(name, expectation = UNDEFINED)
-        items_req.clause?(name, expectation)
+      def schema
+        RequirementsStruct[schema_requirements].freeze
       end
 
       def new(value)
-        Checking.new(value, @items_checker)
+        Checking.new(value, @data_and_schema_checker)
       end
 
       alias [] new
     end
 
     def self.list(options)
-      items = options.delete(:items).then { _1 or Error[':items must be provided'] }
+      schema = options.delete(:schema).then { _1 or Error[':schema must be provided'] }
 
-      list_req = Requirements::Factory.with(options)
-      items_req = Requirements::Factory.with(items)
+      data_req = Requirements::Factory.with(options)
+      schema_req = Requirements::Factory.with(schema)
 
-      DataStructure::List.new(list_req, items_req)
+      DataStructure::ListSchema.new(data_req, schema_req)
     end
-  end
 
-  # rubocop:disable Style/MultipleComparison
-  def self.with(**options)
-    type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
+    # rubocop:disable Style/MultipleComparison
+    def self.with(options)
+      return Requirements::Factory.with(options) unless options.key?(:schema)
 
-    if type.any? { _1 == ::Array || _1 == ::Set } && options.key?(:items)
-      DataStructure.list(options)
-    else
+      type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
+
+      return list(options) if type.any? { _1 == ::Array || _1 == ::Set }
+
       Requirements::Factory.with(options)
     end
+    # rubocop:enable Style/MultipleComparison
   end
-  # rubocop:enable Style/MultipleComparison
+
+  def self.with(**options)
+    options.key?(:schema) ? DataStructure.with(options) : Requirements::Factory.with(options)
+  end
 end
