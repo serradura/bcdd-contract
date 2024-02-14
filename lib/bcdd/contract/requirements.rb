@@ -88,7 +88,7 @@ module BCDD::Contract
 
       def initialize(clause1, clause2)
         @clauses =
-          if clause1.is_a?(Intersection) && clause2.is_a?(Intersection)
+          if !clause1.is_a?(Union) && !clause2.is_a?(Union)
             (clause1.clauses + clause2.clauses).freeze
           else
             [clause1, clause2].freeze
@@ -153,9 +153,15 @@ module BCDD::Contract
         @violations = requirements.call(value, violations: {}).freeze
       end
 
-      def violations?
-        !violations.empty?
+      def valid?
+        violations.empty?
       end
+
+      def invalid?
+        !valid?
+      end
+
+      alias violations? invalid?
 
       def to_h
         { value: value, violations: violations }
@@ -183,21 +189,21 @@ module BCDD::Contract
         requirements.composition
       end
 
-      def clause?(name, expectation = UNDEFINED)
-        has_key = clauses.key?(name)
-
-        expectation == UNDEFINED ? has_key : has_key && clauses[name].include?(expectation)
-      end
-
       def new(value)
         Checking.new(value, requirements)
       end
 
       alias [] new
 
+      def ===(value)
+        new(value).valid?
+      end
+
       def inspect
         requirements.inspect
       end
+
+      alias to_s inspect
 
       private
 
@@ -319,17 +325,19 @@ module BCDD::Contract
     reserved: true
   )
 
-  Requirements::Factory.register(
-    name: :filled,
-    guard: ->(value, bool) { !value.empty? == bool },
-    expectation: ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] },
-    reserved: true
-  )
+  must_be_boolean = ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] }
 
   Requirements::Factory.register(
     name: :allow_nil,
     guard: ->(value, bool) { value.nil? == bool },
-    expectation: ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] },
+    expectation: must_be_boolean,
+    reserved: true
+  )
+
+  Requirements::Factory.register(
+    name: :allow_empty,
+    guard: ->(value, bool) { value.respond_to?(:empty?) && value.empty? == bool },
+    expectation: must_be_boolean,
     reserved: true
   )
 
@@ -356,28 +364,6 @@ module BCDD::Contract
       end
     end
 
-    class RequirementsData
-      attr_reader :requirements
-
-      private :requirements
-
-      def initialize(requirements)
-        @requirements = requirements
-      end
-
-      def inspect
-        requirements.inspect
-      end
-
-      def clauses
-        requirements.clauses
-      end
-
-      def clause?(name, expectation = UNDEFINED)
-        requirements.clause?(name, expectation)
-      end
-    end
-
     class DataSchema
       attr_reader :data_requirements, :schema_requirements
 
@@ -389,20 +375,8 @@ module BCDD::Contract
         @data_and_schema_checker = checker[data_requirements, schema_requirements]
       end
 
-      def inspect
-        Error['must be implemented']
-      end
-
       def clauses
-        { data: data_requirements.clauses, schema: schema_requirements.clauses }
-      end
-
-      def data
-        @data ||= RequirementsData.new(data_requirements).freeze
-      end
-
-      def schema
-        @schema ||= RequirementsData.new(schema_requirements).freeze
+        Error['must be implemented']
       end
 
       def new(value)
@@ -410,6 +384,16 @@ module BCDD::Contract
       end
 
       alias [] new
+
+      def ===(value)
+        new(value).valid?
+      end
+
+      def inspect
+        Error['must be implemented']
+      end
+
+      alias to_s inspect
 
       private
 
@@ -423,11 +407,11 @@ module BCDD::Contract
         ->(value, violations:) do
           data_requirements.send(:requirements).call(value, violations: violations)
 
-          unless violations.key?(:type)
+          if violations.empty? && !(value.nil? || value.empty?)
             value.each_with_index do |vval, index|
               val_checking = schema_requirements.new(vval)
 
-              violations[index] = val_checking.to_h if val_checking.violations?
+              violations[index] = val_checking.to_h if val_checking.invalid?
             end
           end
 
@@ -435,27 +419,64 @@ module BCDD::Contract
         end
       end
 
+      def clauses
+        data_requirements.clauses.merge(schema: schema_requirements.clauses)
+      end
+
       def inspect
         "(#{data_requirements.inspect} [#{schema_requirements.inspect}])"
+      end
+    end
+
+    class HashSchema < DataSchema
+      Checker = ->(data_requirements, schema_requirements) do
+        ->(value, violations:) do
+          data_requirements.send(:requirements).call(value, violations: violations)
+
+          if violations.empty? && !(value.nil? || value.empty?)
+            schema_requirements.each do |skey, item_requirements|
+              val_checking = item_requirements.new(value[skey])
+
+              violations[skey] = val_checking.to_h if val_checking.invalid?
+            end
+          end
+
+          violations
+        end
+      end
+
+      def clauses
+        data_requirements.clauses.merge(schema: schema_requirements.transform_values(&:clauses))
+      end
+
+      def inspect
+        schema_inspect = schema_requirements.map { |key, val| "#{key}: #{val.inspect}" }.join(', ')
+
+        "(#{data_requirements.inspect} {#{schema_inspect}})"
       end
     end
 
     def self.data(strategy, options)
       schema = options.delete(:schema).then { _1 or Error[':schema must be provided'] }
 
+      options[:allow_empty] = false unless options.delete(:allow_empty)
+
       data_req = Requirements::Factory.with(options)
-      schema_req = with(schema)
+      schema_req = with(schema, transform_values: data_req.clauses[:type].include?(::Hash))
 
       strategy.new(data_req, schema_req)
     end
 
     # rubocop:disable Style/MultipleComparison
-    def self.with(options)
-      return Requirements::Factory.with(options) unless options.key?(:schema)
+    def self.with(options, transform_values: false)
+      unless options.key?(:schema)
+        return transform_values ? options.transform_values! { with(_1) } : Requirements::Factory.with(options)
+      end
 
       type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
 
       return data(ListSchema, options) if type.any? { _1 == ::Array || _1 == ::Set }
+      return data(HashSchema, options) if type.any? { _1 == ::Hash }
 
       Requirements::Factory.with(options)
     end

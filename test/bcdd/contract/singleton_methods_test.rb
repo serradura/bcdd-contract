@@ -28,7 +28,7 @@ class BCDD::ContractSingletonMethodsTest < Minitest::Test
   end
 
   test '.assert!' do
-    object = Object.new
+    object = ::Object.new
 
     assert_same true, BCDD::Contract.assert!(true, 'must be true')
     assert_same object, BCDD::Contract.assert!(object, 'must be truthy')
@@ -46,7 +46,7 @@ class BCDD::ContractSingletonMethodsTest < Minitest::Test
   end
 
   test '.assert' do
-    object = Object.new
+    object = ::Object.new
 
     assert_same true, BCDD::Contract.assert(true, 'must be true')
     assert_same object, BCDD::Contract.assert(object, 'must be truthy')
@@ -75,7 +75,7 @@ class BCDD::ContractSingletonMethodsTest < Minitest::Test
       BCDD::Contract.refute!(1, '(%p) block returned true') { |one| one == 1 }
     end
     assert_raises(BCDD::Contract::Error, '(2) block returned truthy') do
-      BCDD::Contract.refute!(2, '(%p) block returned truthy') { Object.new }
+      BCDD::Contract.refute!(2, '(%p) block returned truthy') { ::Object.new }
     end
   end
 
@@ -91,7 +91,7 @@ class BCDD::ContractSingletonMethodsTest < Minitest::Test
       BCDD::Contract.refute!(1, '(%p) block returned true') { |one| one == 1 }
     end
     assert_raises(BCDD::Contract::Error, '(2) block returned truthy') do
-      BCDD::Contract.refute!(2, '(%p) block returned truthy') { Object.new }
+      BCDD::Contract.refute!(2, '(%p) block returned truthy') { ::Object.new }
     end
   end
 

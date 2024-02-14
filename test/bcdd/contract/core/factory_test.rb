@@ -24,7 +24,7 @@ module BCDD::Contract
 
     test 'that cannot be extended by a non-module' do
       assert_raises(Error, 'A contract checker can only be extended by a module') do
-        Object.new.extend(IsString)
+        ::Object.new.extend(IsString)
       end
     end
 

@@ -14,7 +14,7 @@ module BCDD::Contract
     ValidNumber = (IsNumeric & CannotBeNaN & CannotBeInfinity) | nil
 
     test 'the checking: argument validation' do
-      err1 = assert_raises(ArgumentError) { ::BCDD::Contract.unit(Object.new) }
+      err1 = assert_raises(ArgumentError) { ::BCDD::Contract.unit(::Object.new) }
       err2 = assert_raises(ArgumentError) { ::BCDD::Contract.unit(proc {}) }
       err3 = assert_raises(ArgumentError) { ::BCDD::Contract.unit(-> {}) }
 

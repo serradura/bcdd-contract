@@ -42,7 +42,7 @@ class BCDD::Contract::ConfigTest < Minitest::Test
   end
 
   test 'the side effects' do
-    object = Object.new
+    object = ::Object.new
 
     assert(BCDD::Contract.config.proxy_enabled)
     assert(BCDD::Contract.config.assertions_enabled)

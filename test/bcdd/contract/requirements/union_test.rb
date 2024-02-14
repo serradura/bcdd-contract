@@ -5,7 +5,7 @@ require 'test_helper'
 class BCDD::Contract::RequirementsUnionTest < Minitest::Test
   IsEmailOrNil = contract.with(type: String, format: /\A[^@\s]+@[^@\s]+\z/, allow_nil: true)
 
-  FilledArrayOrHash = contract.with(type: [Array, Hash], filled: true)
+  FilledArrayOrHash = contract.with(type: [Array, Hash], allow_empty: false)
 
   test 'the objects' do
     assert_instance_of BCDD::Contract::Requirements::Checker, IsEmailOrNil
@@ -31,7 +31,7 @@ class BCDD::Contract::RequirementsUnionTest < Minitest::Test
     assert_equal({ value: [1], violations: {} }, checking4.to_h)
     assert_equal({ value: { one: 1 }, violations: {} }, checking5.to_h)
 
-    assert_equal({ value: [], violations: { filled: [true] } }, checking6.to_h)
-    assert_equal({ value: {}, violations: { filled: [true] } }, checking7.to_h)
+    assert_equal({ value: [], violations: { allow_empty: [false] } }, checking6.to_h)
+    assert_equal({ value: {}, violations: { allow_empty: [false] } }, checking7.to_h)
   end
 end

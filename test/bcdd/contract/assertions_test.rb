@@ -8,7 +8,7 @@ class BCDD::Contract::AssertionsTest < Minitest::Test
   end
 
   test '#assert!' do
-    object = Object.new
+    object = ::Object.new
 
     assert_same true, Foo.new.assert!(true, 'must be true')
     assert_same object, Foo.new.assert!(object, 'must be truthy')
@@ -26,7 +26,7 @@ class BCDD::Contract::AssertionsTest < Minitest::Test
   end
 
   test '#assert' do
-    object = Object.new
+    object = ::Object.new
 
     assert_same true, Foo.new.assert(true, 'must be true')
     assert_same object, Foo.new.assert(object, 'must be truthy')
@@ -55,7 +55,7 @@ class BCDD::Contract::AssertionsTest < Minitest::Test
       Foo.new.refute!(1, '(%p) block returned true') { |one| one == 1 }
     end
     assert_raises(BCDD::Contract::Error, '(2) block returned truthy') do
-      Foo.new.refute!(2, '(%p) block returned truthy') { Object.new }
+      Foo.new.refute!(2, '(%p) block returned truthy') { ::Object.new }
     end
   end
 
@@ -71,7 +71,7 @@ class BCDD::Contract::AssertionsTest < Minitest::Test
       Foo.new.refute(1, '(%p) block returned true') { |one| one == 1 }
     end
     assert_raises(BCDD::Contract::Error, '(2) block returned truthy') do
-      Foo.new.refute(2, '(%p) block returned truthy') { Object.new }
+      Foo.new.refute(2, '(%p) block returned truthy') { ::Object.new }
     end
   end
 end

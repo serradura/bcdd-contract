@@ -112,7 +112,7 @@ module BCDD::Contract
     end
 
     test '.new' do
-      object = Object.new
+      object = ::Object.new
 
       instance = Core::Proxy.new(object)
 
@@ -120,7 +120,7 @@ module BCDD::Contract
     end
 
     test '#object' do
-      object = Object.new
+      object = ::Object.new
 
       instance = Core::Proxy.new(object)
 
