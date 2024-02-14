@@ -211,7 +211,7 @@ module BCDD::Contract
 
         def initialize
           @store = {}
-          @reserved = ::Set.new
+          @reserved = ::Set[:items]
         end
 
         def self.write(name, factory, reserved:, force:)
@@ -315,6 +315,13 @@ module BCDD::Contract
   )
 
   Requirements::Factory.register(
+    name: :filled,
+    guard: ->(value, bool) { !value.empty? == bool },
+    expectation: ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] },
+    reserved: true
+  )
+
+  Requirements::Factory.register(
     name: :allow_nil,
     guard: ->(value, bool) { value.nil? == bool },
     expectation: ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] },
@@ -323,10 +330,6 @@ module BCDD::Contract
 
   def self.clause(name, value)
     Requirements::Factory.clause(name, value)
-  end
-
-  def self.with(**options)
-    Requirements::Factory.with(options)
   end
 
   module DataStructure
@@ -393,22 +396,26 @@ module BCDD::Contract
 
       alias [] new
     end
+
+    def self.list(options)
+      items = options.delete(:items).then { _1 or Error[':items must be provided'] }
+
+      list_req = Requirements::Factory.with(options)
+      items_req = Requirements::Factory.with(items)
+
+      DataStructure::List.new(list_req, items_req)
+    end
   end
 
-  def self.list!(**options)
-    _items = options.delete(:_items)
+  # rubocop:disable Style/MultipleComparison
+  def self.with(**options)
+    type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
 
-    _items or Error[':_items must be provided']
-
-    options[:type] = [::Array, ::Set] unless options.key?(:type)
-
-    list_req = with(**options)
-    items_req = with(**_items)
-
-    DataStructure::List.new(list_req, items_req)
+    if type.any? { _1 == ::Array || _1 == ::Set } && options.key?(:items)
+      DataStructure.list(options)
+    else
+      Requirements::Factory.with(options)
+    end
   end
-
-  def self.list_items!(**options)
-    list!(_items: options)
-  end
+  # rubocop:enable Style/MultipleComparison
 end

@@ -3,8 +3,8 @@
 require 'test_helper'
 
 class BCDD::Contract::RequirementsDataStructureListTest < Minitest::Test
-  ListOfString = contract.list_items!(type: String)
-  FilledArrayOfString = contract.list!(type: Array, filled: -> { !_1.empty? }, _items: { type: String })
+  ListOfString = contract.with(type: [::Array, ::Set], items: { type: String })
+  FilledArrayOfString = contract.with(type: Array, filled: true, items: { type: String })
 
   test 'the objects' do
     assert_equal({ type: [Array, Set], _items: { type: [String] } }, ListOfString.clauses)
