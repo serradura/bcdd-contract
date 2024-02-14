@@ -87,7 +87,12 @@ module BCDD::Contract
       attr_reader :clauses
 
       def initialize(clause1, clause2)
-        @clauses = [clause1, clause2].freeze
+        @clauses =
+          if clause1.is_a?(Intersection) && clause2.is_a?(Intersection)
+            (clause1.clauses + clause2.clauses).freeze
+          else
+            [clause1, clause2].freeze
+          end
       end
 
       def call(value, violations:)
