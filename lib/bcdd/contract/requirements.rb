@@ -343,12 +343,28 @@ module BCDD::Contract
         { value: value, violations: @violations }
       end
 
+      ExtractViolations = ->(violations) do
+        violations.transform_values do |value|
+          next value unless value.is_a?(::Hash)
+
+          value.key?(:violations) ? ExtractViolations[value[:violations]] : value
+        end
+      end
+
       def violations
-        @violations.transform_values { _1.is_a?(::Hash) && _1.key?(:violations) ? _1[:violations] : _1 }
+        ExtractViolations[@violations]
       end
     end
 
-    RequirementsStruct = Struct.new(:requirements) do
+    class RequirementsData
+      attr_reader :requirements
+
+      private :requirements
+
+      def initialize(requirements)
+        @requirements = requirements
+      end
+
       def inspect
         requirements.inspect
       end
@@ -360,11 +376,49 @@ module BCDD::Contract
       def clause?(name, expectation = UNDEFINED)
         requirements.clause?(name, expectation)
       end
-
-      private :requirements
     end
 
-    class ListSchema
+    class DataSchema
+      attr_reader :data_requirements, :schema_requirements
+
+      private :data_requirements, :schema_requirements
+
+      def initialize(data_requirements, schema_requirements)
+        @data_requirements = data_requirements
+        @schema_requirements = schema_requirements
+        @data_and_schema_checker = checker[data_requirements, schema_requirements]
+      end
+
+      def inspect
+        Error['must be implemented']
+      end
+
+      def clauses
+        { data: data_requirements.clauses, schema: schema_requirements.clauses }
+      end
+
+      def data
+        @data ||= RequirementsData.new(data_requirements).freeze
+      end
+
+      def schema
+        @schema ||= RequirementsData.new(schema_requirements).freeze
+      end
+
+      def new(value)
+        Checking.new(value, @data_and_schema_checker)
+      end
+
+      alias [] new
+
+      private
+
+      def checker
+        self.class.const_get(:Checker, false)
+      end
+    end
+
+    class ListSchema < DataSchema
       Checker = ->(data_requirements, schema_requirements) do
         ->(value, violations:) do
           data_requirements.send(:requirements).call(value, violations: violations)
@@ -381,46 +435,18 @@ module BCDD::Contract
         end
       end
 
-      attr_reader :data_requirements, :schema_requirements
-
-      private :data_requirements, :schema_requirements
-
-      def initialize(data_requirements, schema_requirements)
-        @data_requirements = data_requirements
-        @schema_requirements = schema_requirements
-        @data_and_schema_checker = Checker[data_requirements, schema_requirements]
-      end
-
       def inspect
         "(#{data_requirements.inspect} [#{schema_requirements.inspect}])"
       end
-
-      def clauses
-        { data: data_requirements.clauses, schema: schema_requirements.clauses }
-      end
-
-      def data
-        @data ||= RequirementsStruct[data_requirements].freeze
-      end
-
-      def schema
-        RequirementsStruct[schema_requirements].freeze
-      end
-
-      def new(value)
-        Checking.new(value, @data_and_schema_checker)
-      end
-
-      alias [] new
     end
 
-    def self.list(options)
+    def self.data(strategy, options)
       schema = options.delete(:schema).then { _1 or Error[':schema must be provided'] }
 
       data_req = Requirements::Factory.with(options)
-      schema_req = Requirements::Factory.with(schema)
+      schema_req = with(schema)
 
-      DataStructure::ListSchema.new(data_req, schema_req)
+      strategy.new(data_req, schema_req)
     end
 
     # rubocop:disable Style/MultipleComparison
@@ -429,7 +455,7 @@ module BCDD::Contract
 
       type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
 
-      return list(options) if type.any? { _1 == ::Array || _1 == ::Set }
+      return data(ListSchema, options) if type.any? { _1 == ::Array || _1 == ::Set }
 
       Requirements::Factory.with(options)
     end

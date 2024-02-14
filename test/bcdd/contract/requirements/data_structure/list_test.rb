@@ -4,7 +4,10 @@ require 'test_helper'
 
 class BCDD::Contract::RequirementsDataStructureListTest < Minitest::Test
   ListOfString = contract.with(type: [::Array, ::Set], schema: { type: String })
+
   FilledArrayOfString = contract.with(type: Array, filled: true, schema: { type: String })
+
+  ListOfArrayOfString = contract.with(type: [::Array, ::Set], schema: { type: Array, schema: { type: String } })
 
   test 'the objects' do
     assert_equal '(((type Array) | (type Set)) [(type String)])', ListOfString.inspect
@@ -41,6 +44,23 @@ class BCDD::Contract::RequirementsDataStructureListTest < Minitest::Test
 
     assert FilledArrayOfString.schema.clause?(:type)
     assert FilledArrayOfString.schema.clause?(:type, String)
+
+    # ---
+
+    assert_equal '(((type Array) | (type Set)) [((type Array) [(type String)])])', ListOfArrayOfString.inspect
+
+    assert_equal(
+      { data: { type: [Array, Set] }, schema: { data: { type: [Array] }, schema: { type: [String] } } },
+      ListOfArrayOfString.clauses
+    )
+
+    assert_equal({ type: [Array, Set] }, ListOfArrayOfString.data.clauses)
+
+    assert ListOfArrayOfString.data.clause?(:type)
+    assert ListOfArrayOfString.data.clause?(:type, Array)
+    assert ListOfArrayOfString.data.clause?(:type, Set)
+
+    assert_equal({ data: { type: [Array] }, schema: { type: [String] } }, ListOfArrayOfString.schema.clauses)
   end
 
   test 'the value checking' do
@@ -84,5 +104,63 @@ class BCDD::Contract::RequirementsDataStructureListTest < Minitest::Test
     assert_equal({ type: [Array] }, checking4.violations)
     assert_equal({ filled: [true] }, checking5.violations)
     assert_equal({ 0 => { type: [String] }, 2 => { type: [String] } }, checking6.violations)
+
+    # ---
+
+    checking7 = ListOfArrayOfString.new(set)
+    checking8 = ListOfArrayOfString.new([])
+    checking9 = ListOfArrayOfString.new([%w[1 2 3], ['4']])
+    checking10 = ListOfArrayOfString.new([1, 'string', 2])
+    checking11 = ListOfArrayOfString.new([[1, 'string', 2], 3])
+
+    assert_equal({ value: set, violations: {} }, checking7.to_h)
+    assert_equal({ value: [], violations: {} }, checking8.to_h)
+    assert_equal({ value: [%w[1 2 3], ['4']], violations: {} }, checking9.to_h)
+
+    assert_equal(
+      {
+        value: [1, 'string', 2],
+        violations: {
+          0 => { value: 1, violations: { type: [Array] } },
+          1 => { value: 'string', violations: { type: [Array] } },
+          2 => { value: 2, violations: { type: [Array] } }
+        }
+      },
+      checking10.to_h
+    )
+
+    assert_equal(
+      {
+        value: [[1, 'string', 2], 3],
+        violations: {
+          0 => {
+            value: [1, 'string', 2],
+            violations: {
+              0 => { value: 1, violations: { type:  [String] } },
+              2 => { value: 2, violations: { type:  [String] } }
+            }
+          },
+          1 => { value: 3, violations: { type: [Array] } }
+        }
+      },
+      checking11.to_h
+    )
+
+    assert_equal({}, checking7.violations)
+    assert_equal({}, checking8.violations)
+    assert_equal({}, checking9.violations)
+
+    assert_equal(
+      { 0 => { type: [Array] }, 1 => { type: [Array] }, 2 => { type: [Array] } },
+      checking10.violations
+    )
+
+    assert_equal(
+      {
+        0 => { 0 => { type: [String] }, 2 => { type: [String] } },
+        1 => { type: [Array] }
+      },
+      checking11.violations
+    )
   end
 end
