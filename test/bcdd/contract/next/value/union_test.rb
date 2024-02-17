@@ -2,14 +2,14 @@
 
 require 'test_helper'
 
-class BCDD::Contract::RequirementsUnionTest < Minitest::Test
+class BCDD::Contract::ValueUnionTest < Minitest::Test
   IsEmailOrNil = contract.with(type: String, format: /\A[^@\s]+@[^@\s]+\z/, allow_nil: true)
 
   FilledArrayOrHash = contract.with(type: [Array, Hash], allow_empty: false)
 
   test 'the objects' do
-    assert_instance_of BCDD::Contract::Requirements::Checker, IsEmailOrNil
-    assert_instance_of BCDD::Contract::Requirements::Checker, FilledArrayOrHash
+    assert_instance_of BCDD::Contract::Value::Checker, IsEmailOrNil
+    assert_instance_of BCDD::Contract::Value::Checker, FilledArrayOrHash
   end
 
   test 'the value checking' do

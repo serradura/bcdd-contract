@@ -4,6 +4,7 @@ require 'set'
 require 'singleton'
 
 require_relative 'contract/version'
+require_relative 'contract/next/contract'
 require_relative 'contract/core'
 require_relative 'contract/registry'
 require_relative 'contract/config'
@@ -13,20 +14,9 @@ require_relative 'contract/interface'
 require_relative 'contract/assertions'
 require_relative 'contract/map'
 require_relative 'contract/list'
-require_relative 'contract/requirements'
 
 module BCDD
   module Contract
-    UNDEFINED = ::Object.new.freeze
-
-    class Error < StandardError
-      def self.[](msg, arg_to_print = UNDEFINED)
-        message = arg_to_print == UNDEFINED ? msg : format(msg, arg_to_print)
-
-        raise new(message)
-      end
-    end
-
     def self.config
       Config.instance
     end

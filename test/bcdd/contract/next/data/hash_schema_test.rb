@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class BCDD::Contract::RequirementsDataStructureHashTest < Minitest::Test
+class BCDD::Contract::DataHashSchemaTest < Minitest::Test
   PersonParams1a = contract.with(
     type: Hash,
     schema: {

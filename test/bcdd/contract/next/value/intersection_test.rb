@@ -2,11 +2,11 @@
 
 require 'test_helper'
 
-class BCDD::Contract::RequirementsIntersectionTest < Minitest::Test
+class BCDD::Contract::ValueIntersectionTest < Minitest::Test
   IsEmail = contract.with(type: String, format: /\A[^@\s]+@[^@\s]+\z/)
 
   test 'the objects' do
-    assert_instance_of BCDD::Contract::Requirements::Checker, IsEmail
+    assert_instance_of BCDD::Contract::Value::Checker, IsEmail
   end
 
   test 'the value checking' do

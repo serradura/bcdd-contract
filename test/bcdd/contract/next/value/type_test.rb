@@ -2,13 +2,13 @@
 
 require 'test_helper'
 
-class BCDD::Contract::RequirementsTypeTest < Minitest::Test
+class BCDD::Contract::ValueTypeTest < Minitest::Test
   IsString = contract.with(type: String)
   IsSymbol = contract.with(type: Symbol)
 
   test 'the objects' do
-    assert_instance_of BCDD::Contract::Requirements::Checker, IsString
-    assert_instance_of BCDD::Contract::Requirements::Checker, IsSymbol
+    assert_instance_of BCDD::Contract::Value::Checker, IsString
+    assert_instance_of BCDD::Contract::Value::Checker, IsSymbol
   end
 
   test 'the value checking' do

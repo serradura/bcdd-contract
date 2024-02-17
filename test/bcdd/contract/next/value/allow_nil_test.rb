@@ -2,13 +2,13 @@
 
 require 'test_helper'
 
-class BCDD::Contract::RequirementsNilTest < Minitest::Test
+class BCDD::Contract::ValueNilTest < Minitest::Test
   IsNil = contract.with(allow_nil: true)
   IsNotNil = contract.with(allow_nil: false)
 
   test 'the objects' do
-    assert_instance_of BCDD::Contract::Requirements::Checker, IsNil
-    assert_instance_of BCDD::Contract::Requirements::Checker, IsNotNil
+    assert_instance_of BCDD::Contract::Value::Checker, IsNil
+    assert_instance_of BCDD::Contract::Value::Checker, IsNotNil
   end
 
   test 'the value checking' do

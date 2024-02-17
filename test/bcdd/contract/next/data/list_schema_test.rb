@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class BCDD::Contract::RequirementsDataStructureListTest < Minitest::Test
+class BCDD::Contract::DataListSchemaTest < Minitest::Test
   ListOfString = contract.with(
     type: [::Array, ::Set],
     schema: { type: String },
