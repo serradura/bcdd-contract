@@ -117,7 +117,7 @@ module BCDD::Contract
 
       options[:allow_empty] = false unless options.delete(:allow_empty)
 
-      data_req = Value.with(options)
+      data_req = Value::Create.with(options)
       schema_req = with(schema, transform_values: data_req.clauses[:type].include?(::Hash))
 
       strategy.new(data_req, schema_req)
@@ -126,7 +126,7 @@ module BCDD::Contract
     # rubocop:disable Style/MultipleComparison
     def self.with(options, transform_values: false)
       unless options.key?(:schema)
-        return transform_values ? options.transform_values! { with(_1) } : Value.with(options)
+        return transform_values ? options.transform_values! { with(_1) } : Value::Create.with(options)
       end
 
       type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
@@ -134,7 +134,7 @@ module BCDD::Contract
       return data(ListSchema, options) if type.any? { _1 == ::Array || _1 == ::Set }
       return data(HashSchema, options) if type.any? { _1 == ::Hash }
 
-      Value.with(options)
+      Value::Create.with(options)
     end
     # rubocop:enable Style/MultipleComparison
   end

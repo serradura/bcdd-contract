@@ -221,8 +221,6 @@ module BCDD::Contract
     end
 
     module Factory
-      REGISTRY = Cache.new
-
       class Instance
         attr_reader :name, :guard, :expectation
 
@@ -241,6 +239,8 @@ module BCDD::Contract
         end
       end
 
+      REGISTRY = Cache.new
+
       def self.register(name:, guard:, expectation: nil, reserve: false, force: false)
         factory = Instance.new(name, guard, expectation)
 
@@ -250,6 +250,13 @@ module BCDD::Contract
       must_be_boolean = ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] }
 
       register(
+        name: :allow_empty,
+        guard: ->(value, bool) { value.respond_to?(:empty?) && value.empty? == bool },
+        expectation: must_be_boolean,
+        reserve: true
+      )
+
+      register(
         name: :allow_nil,
         guard: ->(value, bool) { value.nil? == bool },
         expectation: must_be_boolean,
@@ -257,9 +264,9 @@ module BCDD::Contract
       )
 
       register(
-        name: :allow_empty,
-        guard: ->(value, bool) { value.respond_to?(:empty?) && value.empty? == bool },
-        expectation: must_be_boolean,
+        name: :format,
+        guard: ->(value, regexp) { regexp.match?(value) },
+        expectation: ->(arg, err) { arg.is_a?(::Regexp) or err['%p must be a Regexp', arg] },
         reserve: true
       )
 
@@ -270,47 +277,55 @@ module BCDD::Contract
         reserve: true
       )
 
-      register(
-        name: :format,
-        guard: ->(value, regexp) { regexp.match?(value) },
-        expectation: ->(arg, err) { arg.is_a?(::Regexp) or err['%p must be a Regexp', arg] },
-        reserve: true
-      )
-    end
+      def self.call(name, value)
+        REGISTRY.read!(name).call(value)
+      end
 
-    extend self
+      def self.allow_nil(value)
+        call(:allow_nil, value) unless value.nil?
+      end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-    def with(options)
-      type      = options.delete(:type)&.then { _1.is_a?(::Array) ? _1.map { |t| type(t) }.reduce(:|) : type(_1) }
-      allow_nil = options.delete(:allow_nil)&.then { call_factory(:allow_nil, _1) unless _1.nil? }
+      def self.type(value)
+        return unless value
 
-      other = options.map { |name, value| clause(name, value) }
-
-      checker = type
-      checker = (checker ? ([checker] + other) : other).reduce(:&) unless other.empty?
-      checker = checker ? checker | allow_nil : allow_nil if allow_nil
-      checker
-    end
-    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-
-    def clause(name, value)
-      case value
-      when ::Hash then Checker.single(name, value.fetch(:guard), value[:expectation])
-      when ::Proc then Checker.single(name, value)
-      when ::Array then value.map { |val| clause(name, val) }.reduce(:|)
-      else call_factory(name, value)
+        value.is_a?(::Array) ? value.map { call(:type, _1) }.reduce(:|) : call(:type, value)
       end
     end
 
-    private
+    module Create
+      REGISTERED = Cache.new
 
-    def type(value)
-      call_factory(:type, value)
-    end
+      def self.registered(name, options)
+        REGISTERED.ensure_uniqueness(name)
 
-    def call_factory(name, value)
-      Factory::REGISTRY.read(name).call(value)
+        contract = with(options)
+
+        REGISTERED.write(name, contract, reserve: true, force: false)
+
+        contract
+      end
+
+      def self.with(options)
+        type = Factory.type(options.delete(:type))
+        allow_nil = Factory.allow_nil(options.delete(:allow_nil))
+
+        other = options.map { |name, value| clause(name, value) }
+
+        checker = type
+        checker = (checker ? ([checker] + other) : other).reduce(:&) unless other.empty?
+        checker = checker ? checker | allow_nil : allow_nil if allow_nil
+        checker
+      end
+
+      def self.clause(name, value)
+        case value
+        when ::Hash then Checker.single(name, value.fetch(:guard), value[:expectation])
+        when ::Proc then Checker.single(name, value)
+        when ::Array then value.map { |val| clause(name, val) }.reduce(:|)
+        else
+          REGISTERED.read(name) || Factory.call(name, value)
+        end
+      end
     end
   end
 end

@@ -26,20 +26,30 @@ module BCDD::Contract
       @store = {}
     end
 
+    def exists?(name)
+      store.key?(name)
+    end
+
+    def ensure_uniqueness(name)
+      exists?(name) and Error['%p already registered', name]
+    end
+
+    def read(name)
+      store[name] if exists?(name)
+    end
+
+    def read!(name)
+      read(name) or raise(::ArgumentError, format('%p not registered', name))
+    end
+
     def write(name, item, reserve:, force:)
       ReservedNames.guard(name) do |reserved_names|
-        !force && store.key?(name) and raise ::ArgumentError, "#{name} already registered"
+        ensure_uniqueness(name: name) unless force
 
         reserved_names << name if reserve
 
         store[name] = item
       end
-    end
-
-    def read(name)
-      store.key?(name) or raise(::ArgumentError, format('%p not registered', name))
-
-      store[name]
     end
   end
 end
