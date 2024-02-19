@@ -215,38 +215,7 @@ module BCDD::Contract
     end
 
     module Factory
-      class Registry
-        include ::Singleton
-
-        attr_reader :store, :reserved
-
-        def initialize
-          @store = {}
-          @reserved = ::Set[:schema]
-        end
-
-        def self.write(name, factory, reserved:, force:)
-          reserved_names = instance.reserved
-
-          reserved_names.include?(name) and raise ::ArgumentError, "#{name} is a reserved name"
-
-          factory_store = instance.store
-
-          !force && factory_store.key?(name) and raise ::ArgumentError, "#{name} already registered"
-
-          reserved_names << name if reserved
-
-          factory_store[name] = factory
-        end
-
-        def self.read(name)
-          factory_store = instance.store
-
-          factory_store.key?(name) or raise(::ArgumentError, format('%p not registered', name))
-
-          factory_store[name]
-        end
-      end
+      REGISTRY = Cache.new
 
       Singleton = ->(name, guard, expectation = nil) do
         clause = Clause.new(name: name, guard: guard, expectation: expectation)
@@ -272,14 +241,14 @@ module BCDD::Contract
         end
       end
 
-      def self.register(name:, guard:, expectation: nil, reserved: false, force: false)
+      def self.register(name:, guard:, expectation: nil, reserve: false, force: false)
         factory = Instance.new(name, guard, expectation)
 
-        Registry.write(name, factory, reserved: reserved, force: force)
+        REGISTRY.write(name, factory, reserve: reserve, force: force)
       end
 
       def self.call(name, value)
-        Registry.read(name).call(value)
+        REGISTRY.read(name).call(value)
       end
 
       def self.type(value)
@@ -308,6 +277,10 @@ module BCDD::Contract
         checker
       end
       # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    end
+
+    def self.with(options)
+      Value::Factory.with(options)
     end
   end
 end
