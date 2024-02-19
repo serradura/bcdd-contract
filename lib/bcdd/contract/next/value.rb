@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module BCDD::Contract
-  class Value
+  module Value
     class Clause
       attr_reader :name, :guard, :expectation
 
@@ -60,7 +60,7 @@ module BCDD::Contract
       end
     end
 
-    class Singleton
+    class Single
       include Composition
 
       attr_reader :clause, :clauses
@@ -173,6 +173,12 @@ module BCDD::Contract
 
       protected :requirements
 
+      def self.single(name, guard, expectation = nil)
+        clause = Clause.new(name: name, guard: guard, expectation: expectation)
+
+        new(Single.new(clause))
+      end
+
       def initialize(requirements)
         @requirements = requirements
       end
@@ -217,12 +223,6 @@ module BCDD::Contract
     module Factory
       REGISTRY = Cache.new
 
-      Singleton = ->(name, guard, expectation = nil) do
-        clause = Clause.new(name: name, guard: guard, expectation: expectation)
-
-        Checker.new(Value::Singleton.new(clause))
-      end
-
       class Instance
         attr_reader :name, :guard, :expectation
 
@@ -237,7 +237,7 @@ module BCDD::Contract
         def call(expectation)
           self.expectation&.call(expectation, Error)
 
-          Singleton.call(name, guard, expectation)
+          Checker.single(name, guard, expectation)
         end
       end
 
@@ -247,40 +247,70 @@ module BCDD::Contract
         REGISTRY.write(name, factory, reserve: reserve, force: force)
       end
 
-      def self.call(name, value)
-        REGISTRY.read(name).call(value)
-      end
+      must_be_boolean = ->(arg, err) { arg == true || arg == false or err['%p must be a boolean', arg] }
 
-      def self.type(value)
-        call(:type, value)
-      end
+      register(
+        name: :allow_nil,
+        guard: ->(value, bool) { value.nil? == bool },
+        expectation: must_be_boolean,
+        reserve: true
+      )
 
-      def self.clause(name, value)
-        case value
-        when ::Hash then Singleton[name, value.fetch(:guard), value[:expectation]]
-        when ::Proc then Singleton[name, value]
-        when ::Array then value.map { |val| clause(name, val) }.reduce(:|)
-        else call(name, value)
-        end
-      end
+      register(
+        name: :allow_empty,
+        guard: ->(value, bool) { value.respond_to?(:empty?) && value.empty? == bool },
+        expectation: must_be_boolean,
+        reserve: true
+      )
 
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-      def self.with(options)
-        type      = options.delete(:type)&.then { _1.is_a?(::Array) ? _1.map { |t| type(t) }.reduce(:|) : type(_1) }
-        allow_nil = options.delete(:allow_nil)&.then { call(:allow_nil, _1) unless _1.nil? }
+      register(
+        name: :type,
+        guard: ->(value, class_or_mod) { value.is_a?(class_or_mod) },
+        expectation: ->(arg, err) { arg.is_a?(::Module) or err['%p must be a Class or a Module', arg] },
+        reserve: true
+      )
 
-        other = options.map { |name, value| clause(name, value) }
-
-        checker = type
-        checker = (checker ? ([checker] + other) : other).reduce(:&) unless other.empty?
-        checker = checker ? checker | allow_nil : allow_nil if allow_nil
-        checker
-      end
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      register(
+        name: :format,
+        guard: ->(value, regexp) { regexp.match?(value) },
+        expectation: ->(arg, err) { arg.is_a?(::Regexp) or err['%p must be a Regexp', arg] },
+        reserve: true
+      )
     end
 
-    def self.with(options)
-      Value::Factory.with(options)
+    extend self
+
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    def with(options)
+      type      = options.delete(:type)&.then { _1.is_a?(::Array) ? _1.map { |t| type(t) }.reduce(:|) : type(_1) }
+      allow_nil = options.delete(:allow_nil)&.then { call_factory(:allow_nil, _1) unless _1.nil? }
+
+      other = options.map { |name, value| clause(name, value) }
+
+      checker = type
+      checker = (checker ? ([checker] + other) : other).reduce(:&) unless other.empty?
+      checker = checker ? checker | allow_nil : allow_nil if allow_nil
+      checker
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+
+    def clause(name, value)
+      case value
+      when ::Hash then Checker.single(name, value.fetch(:guard), value[:expectation])
+      when ::Proc then Checker.single(name, value)
+      when ::Array then value.map { |val| clause(name, val) }.reduce(:|)
+      else call_factory(name, value)
+      end
+    end
+
+    private
+
+    def type(value)
+      call_factory(:type, value)
+    end
+
+    def call_factory(name, value)
+      Factory::REGISTRY.read(name).call(value)
     end
   end
 end
