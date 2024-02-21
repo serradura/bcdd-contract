@@ -80,20 +80,6 @@ class BCDD::Contract::DataHashSchemaTest < Minitest::Test
     }
   )
 
-  def assert_inspect(contract, heredoc)
-    expected = heredoc
-                .gsub(/\s+/, ' ')
-                .strip
-                .gsub('{ ', '{')
-                .gsub(' }', '}')
-                .gsub('[ ', '[')
-                .gsub(' ]', ']')
-                .gsub('( ', '(')
-                .gsub(' )', ')')
-
-    assert_equal(expected, contract.inspect)
-  end
-
   test 'the inspect outputs' do
     person_params1a = <<~LISP
       (((type Hash) & (allow_empty false)) {
@@ -579,5 +565,19 @@ class BCDD::Contract::DataHashSchemaTest < Minitest::Test
       {},
       people_params3b.violations
     )
+  end
+
+  def assert_inspect(contract, heredoc)
+    expected = heredoc
+                .gsub(/\s+/, ' ')
+                .strip
+                .gsub('{ ', '{')
+                .gsub(' }', '}')
+                .gsub('[ ', '[')
+                .gsub(' ]', ']')
+                .gsub('( ', '(')
+                .gsub(' )', ')')
+
+    assert_equal(expected, contract.inspect)
   end
 end
