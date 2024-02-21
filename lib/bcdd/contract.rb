@@ -4,7 +4,7 @@ require 'set'
 require 'singleton'
 
 require_relative 'contract/version'
-require_relative 'contract/next/contract'
+require_relative 'contract/_next/contract'
 require_relative 'contract/core'
 require_relative 'contract/registry'
 require_relative 'contract/config'
