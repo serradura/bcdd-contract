@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'pp'
+
 module BCDD::Contract
   module Value
     class Clause
@@ -145,12 +147,14 @@ module BCDD::Contract
     end
 
     class Checking
-      attr_reader :violations, :value
+      attr_reader :violations, :value, :requirements
+
+      private :requirements
 
       def initialize(value, requirements)
         @value = value
-
         @violations = requirements.call(value, violations: {}).freeze
+        @requirements = requirements
       end
 
       def valid?
@@ -163,9 +167,29 @@ module BCDD::Contract
 
       alias violations? invalid?
 
-      def to_h
+      def value_and_violations
         { value: value, violations: violations }
       end
+
+      alias to_h value_and_violations
+
+      def raise_validation_errors!
+        return if valid?
+
+        message = "Expected #{value.inspect} to be === #{requirements.inspect}.\n\n" \
+                  "Violations:\n\n#{violations.pretty_inspect}"
+
+        Error[message]
+      end
+
+      def value_or_raise_validation_errors!
+        raise_validation_errors! || value
+      end
+
+      alias !@ value_or_raise_validation_errors!
+      alias +@ value_or_raise_validation_errors!
+      alias value! value_or_raise_validation_errors!
+      alias assert! value_or_raise_validation_errors!
     end
 
     class Checker

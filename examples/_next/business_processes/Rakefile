@@ -1,0 +1,50 @@
+# frozen_string_literal: true
+
+if RUBY_VERSION <= '3.1'
+  puts 'This example requires Ruby 3.1 or higher.'
+  exit! 1
+end
+
+require_relative 'config'
+
+task :default do
+  puts '=================================================='
+  puts 'Business Processes = BCDD::Result + BCDD::Contract'
+  puts '=================================================='
+
+  puts
+  puts '--  Failures  --'
+  puts
+
+  p Division.new.call('10', 2)
+  p Division.new.call(10, '2')
+  p Division.new.call(Float::NAN, 2)
+  p Division.new.call(10, Float::INFINITY)
+  p Division.new.call(10, 0)
+  p Division.new.call(10, 0.0)
+
+  puts
+  puts '--  Successes  --'
+  puts
+
+  p Division.new.call(0, 2)
+  p Division.new.call(0.0, 2)
+  p Division.new.call(10, 2)
+end
+
+# Output sample: rake
+#
+# --  Failures  --
+#
+# #<BCDD::Result::Failure type=:invalid_arg value=[:arg1, ["\"10\" must be numeric"]]>
+# #<BCDD::Result::Failure type=:invalid_arg value=[:arg2, ["\"2\" must be numeric"]]>
+# #<BCDD::Result::Failure type=:invalid_arg value=[:arg1, ["cannot be nan"]]>
+# #<BCDD::Result::Failure type=:invalid_arg value=[:arg2, ["cannot be infinite"]]>
+# #<BCDD::Result::Failure type=:division_by_zero value=[:arg2, ["cannot be zero"]]>
+# #<BCDD::Result::Failure type=:division_by_zero value=[:arg2, ["cannot be zero"]]>
+#
+# --  Successes  --
+#
+# #<BCDD::Result::Success type=:division_completed value=0>
+# #<BCDD::Result::Success type=:division_completed value=0>
+# #<BCDD::Result::Success type=:division_completed value=5>
