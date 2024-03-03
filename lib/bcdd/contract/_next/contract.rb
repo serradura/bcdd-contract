@@ -8,7 +8,9 @@ module BCDD::Contract
   require_relative 'data'
 
   def self.with(**options)
-    Data.options?(options) ? Data.with(options) : Value::Create.with(options)
+    create = Data::Create.options?(options) ? Data::Create : Value::Create
+
+    create.with(options)
   end
 
   def self.register!(name, options)

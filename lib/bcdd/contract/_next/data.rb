@@ -214,67 +214,69 @@ module BCDD::Contract
       end
     end
 
-    def self.schema(strategy, options)
-      schema = options.delete(:schema)
+    module Create
+      def self.schema(strategy, options)
+        schema = options.delete(:schema)
 
-      options[:allow_empty] = false unless options.delete(:allow_empty)
+        options[:allow_empty] = false unless options.delete(:allow_empty)
 
-      data_req = Value::Create.with(options)
-      schema_req = with(schema, transform_values: data_req.clauses[:type].include?(::Hash))
+        data_req = Value::Create.with(options)
+        schema_req = with(schema, transform_values: data_req.clauses[:type].include?(::Hash))
 
-      strategy.new(data_req, schema_req)
-    end
-
-    def self.pairs(strategy, options)
-      pairs = options.delete(:pairs)
-
-      first = pairs.delete(:key).then { _1 || Error[':key is required'] }
-      second = pairs.delete(:value).then { _1 || Error[':value is required'] }
-
-      options[:allow_empty] = false unless options.delete(:allow_empty)
-
-      data_req = Value::Create.with(options)
-      first_req = with(first)
-      second_req = with(second)
-
-      strategy.new(data_req, first_req, second_req)
-    end
-
-    def self.data(type, options)
-      has_pairs = options.key?(:pairs)
-      has_schema = options.key?(:schema)
-
-      has_pairs && has_schema and Error[':pairs and :schema are mutually exclusive']
-
-      if type.any? { _1 == ::Hash }
-        has_schema ? schema(HashSchema, options) : pairs(HashKeyValue, options)
-      else
-        schema(ListSchema, options)
-      end
-    end
-
-    # rubocop:disable Metrics/CyclomaticComplexity
-    def self.with(options, transform_values: false)
-      return options if options.is_a?(Value::Checker) || options.is_a?(Schema) || options.is_a?(Pairs)
-
-      unless options?(options)
-        return transform_values ? options.transform_values! { with(_1) } : Value::Create.with(options)
+        strategy.new(data_req, schema_req)
       end
 
-      type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
+      def self.pairs(strategy, options)
+        pairs = options.delete(:pairs)
 
-      type?(type) ? data(type, options) : Value::Create.with(options)
-    end
-    # rubocop:enable Metrics/CyclomaticComplexity
+        first = pairs.delete(:key).then { _1 || Error[':key is required'] }
+        second = pairs.delete(:value).then { _1 || Error[':value is required'] }
 
-    def self.options?(options)
-      options.key?(:schema) || options.key?(:pairs)
-    end
+        options[:allow_empty] = false unless options.delete(:allow_empty)
 
-    # rubocop:disable Style/MultipleComparison
-    def self.type?(type)
-      type.any? { _1 == ::Array || _1 == ::Set || _1 == ::Hash }
+        data_req = Value::Create.with(options)
+        first_req = with(first)
+        second_req = with(second)
+
+        strategy.new(data_req, first_req, second_req)
+      end
+
+      def self.data(type, options)
+        has_pairs = options.key?(:pairs)
+        has_schema = options.key?(:schema)
+
+        has_pairs && has_schema and Error[':pairs and :schema are mutually exclusive']
+
+        if type.any? { _1 == ::Hash }
+          has_schema ? schema(HashSchema, options) : pairs(HashKeyValue, options)
+        else
+          schema(ListSchema, options)
+        end
+      end
+
+      # rubocop:disable Metrics/CyclomaticComplexity
+      def self.with(options, transform_values: false)
+        return options if options.is_a?(Value::Checker) || options.is_a?(Schema) || options.is_a?(Pairs)
+
+        unless options?(options)
+          return transform_values ? options.transform_values! { with(_1) } : Value::Create.with(options)
+        end
+
+        type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
+
+        type?(type) ? data(type, options) : Value::Create.with(options)
+      end
+      # rubocop:enable Metrics/CyclomaticComplexity
+
+      def self.options?(options)
+        options.key?(:schema) || options.key?(:pairs)
+      end
+
+      # rubocop:disable Style/MultipleComparison
+      def self.type?(type)
+        type.any? { _1 == ::Array || _1 == ::Set || _1 == ::Hash }
+      end
+      # rubocop:enable Style/MultipleComparison
     end
-    # rubocop:enable Style/MultipleComparison
   end
 end
