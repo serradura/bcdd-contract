@@ -47,6 +47,16 @@ module BCDD::Contract
 
       alias [] new
 
+      def invariant(value)
+        new(value).raise_validation_errors!
+
+        output = yield(value)
+
+        new(value).raise_validation_errors!
+
+        output
+      end
+
       def ===(value)
         new(value).valid?
       end
@@ -139,6 +149,16 @@ module BCDD::Contract
       end
 
       alias [] new
+
+      def invariant(value)
+        new(value).raise_validation_errors!
+
+        output = yield(value)
+
+        new(value).raise_validation_errors!
+
+        output
+      end
 
       def ===(value)
         new(value).valid?
@@ -233,7 +253,10 @@ module BCDD::Contract
       end
     end
 
+    # rubocop:disable Metrics/CyclomaticComplexity
     def self.with(options, transform_values: false)
+      return options if options.is_a?(Value::Checker) || options.is_a?(Schema) || options.is_a?(Pairs)
+
       unless options?(options)
         return transform_values ? options.transform_values! { with(_1) } : Value::Create.with(options)
       end
@@ -242,6 +265,7 @@ module BCDD::Contract
 
       type?(type) ? data(type, options) : Value::Create.with(options)
     end
+    # rubocop:enable Metrics/CyclomaticComplexity
 
     def self.options?(options)
       options.key?(:schema) || options.key?(:pairs)

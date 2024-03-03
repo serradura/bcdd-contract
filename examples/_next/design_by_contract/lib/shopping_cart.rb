@@ -14,7 +14,11 @@ class ShoppingCart
   end
 
   module Items
-    Contract = BCDD::Contract.with(type: Hash, schema: { Item::Contract::Name => Item::Contract::Data })
+    Contract = BCDD::Contract.with(
+      type: Hash,
+      allow_empty: true,
+      pairs: { key: Item::Contract::Name, value: Item::Contract::Data }
+    )
   end
 
   def initialize(items = {})
