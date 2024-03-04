@@ -14,6 +14,8 @@ module BCDD::Contract
   end
 
   def self.register!(name, options)
-    Value::Create.registered(name, options)
+    contract = Data::Create.options?(options) ? Data::Create : Value::Create
+
+    contract.registered(name, options)
   end
 end

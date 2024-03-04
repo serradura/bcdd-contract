@@ -215,6 +215,18 @@ module BCDD::Contract
     end
 
     module Create
+      REGISTERED = Value::Create::REGISTERED
+
+      def self.registered(name, options)
+        REGISTERED.ensure_uniqueness(name)
+
+        contract = with(options)
+
+        REGISTERED.write(name, contract, reserve: true, force: false)
+
+        contract
+      end
+
       def self.schema(strategy, options)
         schema = options.delete(:schema)
 
