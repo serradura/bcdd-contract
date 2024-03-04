@@ -18,4 +18,8 @@ module BCDD::Contract
 
     contract.registered(name, options)
   end
+
+  def self.factory!(**options)
+    Value::Factory.register(**options)
+  end
 end
