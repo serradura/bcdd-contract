@@ -330,7 +330,7 @@ module BCDD::Contract
           size = val.size
 
           return size == is if is
-          return within.is_a?(::Range) ? size.cover?(within) : within.include?(size) if within
+          return within.is_a?(::Range) ? within.cover?(size) : within.include?(size) if within
           return size.between?(min, max) if min && max
           return size >= min if min
 
