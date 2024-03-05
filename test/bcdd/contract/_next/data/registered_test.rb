@@ -20,7 +20,7 @@ class BCDD::Contract::DataRegisteredTest < Minitest::Test
   })
 
   contract.register!(:list_of_strings, {
-    type: [::Array, ::Set],
+    type: { union: [::Array, ::Set] },
     schema: { type: String },
     allow_nil: true,
     allow_empty: true

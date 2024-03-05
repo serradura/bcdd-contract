@@ -4,7 +4,7 @@ require 'test_helper'
 
 class BCDD::Contract::DataListSchemaTest < Minitest::Test
   ListOfString = contract.with(
-    type: [::Array, ::Set],
+    type: { union: [::Array, ::Set] },
     schema: { type: String },
     allow_nil: true,
     allow_empty: true
@@ -16,7 +16,7 @@ class BCDD::Contract::DataListSchemaTest < Minitest::Test
   )
 
   ListOfArrayOfString = contract.with(
-    type: [::Array, ::Set],
+    type: { union: [::Array, ::Set] },
     schema: {
       type: Array,
       schema: { type: String },

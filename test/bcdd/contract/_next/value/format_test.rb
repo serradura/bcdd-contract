@@ -5,10 +5,9 @@ require 'test_helper'
 class BCDD::Contract::ValueFormatTest < Minitest::Test
   UUIDFormat = contract.with(format: /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/)
   EmailFormat = contract.with(format: /\A[^@\s]+@[^@\s]+\z/)
-  UUIDorEmail = contract.with(format: [
-    /\A[^@\s]+@[^@\s]+\z/,
-    /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
-  ])
+  UUIDorEmail = contract.with(format: {
+    union: [/\A[^@\s]+@[^@\s]+\z/, /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/]
+  })
 
   test 'the objects' do
     assert_instance_of BCDD::Contract::Value::Checker, UUIDFormat

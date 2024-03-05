@@ -274,7 +274,7 @@ module BCDD::Contract
           return transform_values ? options.transform_values! { with(_1) } : Value::Create.with(options)
         end
 
-        type = options[:type].then { _1.is_a?(::Array) ? _1 : [_1] }
+        type = options[:type].then { Array(_1.is_a?(::Hash) ? _1[:union] : [_1]) }
 
         type?(type) ? data(type, options) : Value::Create.with(options)
       end

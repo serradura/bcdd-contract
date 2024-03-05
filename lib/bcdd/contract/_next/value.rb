@@ -351,7 +351,7 @@ module BCDD::Contract
       def self.type(value)
         return unless value
 
-        value.is_a?(::Array) ? value.map { call(:type, _1) }.reduce(:|) : call(:type, value)
+        value.is_a?(::Hash) ? value.fetch(:union).map { call(:type, _1) }.reduce(:|) : call(:type, value)
       end
     end
 
@@ -380,17 +380,24 @@ module BCDD::Contract
         checker
       end
 
+      # rubocop:disable Metrics/AbcSize
       def self.clause(name, value)
-        case value
-        when ::Proc then Checker.single(name, value)
-        when ::Array then value.map { |val| clause(name, val) }.reduce(:|)
-        when ::Hash
-          return Factory.call(name, value) if Factory::REGISTRY.exists?(name)
+        return Checker.single(name, value) if value.is_a?(::Proc)
 
-          Checker.single(name, value.fetch(:guard), value[:expectation])
+        return REGISTERED.read(name) || Factory.call(name, value) unless value.is_a?(::Hash)
+
+        if value.key?(:union)
+          Array(value[:union]).map { |val| call_factory_or_fallback(name, val) { clause(name, val) } }.reduce(:|)
         else
-          REGISTERED.read(name) || Factory.call(name, value)
+          call_factory_or_fallback(name, value) { Checker.single(name, value.fetch(:guard), value[:expectation]) }
         end
+      end
+      # rubocop:enable Metrics/AbcSize
+
+      def self.call_factory_or_fallback(name, value)
+        return Factory.call(name, value) if Factory::REGISTRY.exists?(name)
+
+        yield
       end
     end
   end
