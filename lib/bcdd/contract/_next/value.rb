@@ -340,6 +340,17 @@ module BCDD::Contract
         reserve: true
       )
 
+      register(
+        name: :respond_to,
+        guard: ->(val, opt) { Array(opt).all? { val.respond_to?(_1) } },
+        reserve: true,
+        expectation: ->(arg, err) do
+          return true if Array(arg).then { !_1.empty? && _1.all? { |it| it.respond_to?(:to_sym) } }
+
+          err["#{arg.inspect} must be one or an array of symbols"]
+        end
+      )
+
       def self.call(name, value)
         REGISTRY.read!(name).call(value)
       end
