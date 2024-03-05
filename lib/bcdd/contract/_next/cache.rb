@@ -12,11 +12,13 @@ module BCDD::Contract
       end
 
       def self.guard(name)
-        names = instance.list
+        include?(name) and raise ::ArgumentError, "#{name} is a reserved name"
 
-        !names.include?(name) or raise ::ArgumentError, "#{name} is a reserved name"
+        yield(instance.list)
+      end
 
-        yield(names)
+      def self.include?(name)
+        instance.list.include?(name)
       end
     end
 

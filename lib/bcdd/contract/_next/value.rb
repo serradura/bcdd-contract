@@ -301,6 +301,45 @@ module BCDD::Contract
         reserve: true
       )
 
+      register(
+        name: :empty,
+        guard: ->(val, _) { !val.respond_to?(:empty?) || val.empty? },
+        expectation: must_be_boolean,
+        reserve: true
+      )
+
+      register(
+        name: :inclusion,
+        guard: ->(val, opt) { opt.fetch(:in).then { _1.is_a?(::Range) ? _1.cover?(val) : _1.include?(val) } },
+        expectation: ->(arg, err) { arg.is_a?(::Hash) or err["#{arg.inspect} must be a Hash"] },
+        reserve: true
+      )
+
+      register(
+        name: :exclusion,
+        guard: ->(val, opt) { opt.fetch(:in).then { _1.is_a?(::Range) ? !_1.cover?(val) : !_1.include?(val) } },
+        expectation: ->(arg, err) { arg.is_a?(::Hash) or err["#{arg.inspect} must be a Hash"] },
+        reserve: true
+      )
+
+      register(
+        name: :length,
+        guard: ->(val, opt) do
+          min, max, is, within = opt.values_at(:minimum, :maximum, :is, :in)
+
+          size = val.size
+
+          return size == is if is
+          return within.is_a?(::Range) ? size.cover?(within) : within.include?(size) if within
+          return size.between?(min, max) if min && max
+          return size >= min if min
+
+          size <= max if max
+        end,
+        expectation: ->(arg, err) { arg.is_a?(::Hash) or err["#{arg.inspect} must be a Hash"] },
+        reserve: true
+      )
+
       def self.call(name, value)
         REGISTRY.read!(name).call(value)
       end
@@ -343,9 +382,12 @@ module BCDD::Contract
 
       def self.clause(name, value)
         case value
-        when ::Hash then Checker.single(name, value.fetch(:guard), value[:expectation])
         when ::Proc then Checker.single(name, value)
         when ::Array then value.map { |val| clause(name, val) }.reduce(:|)
+        when ::Hash
+          return Factory.call(name, value) if Factory::REGISTRY.exists?(name)
+
+          Checker.single(name, value.fetch(:guard), value[:expectation])
         else
           REGISTERED.read(name) || Factory.call(name, value)
         end
