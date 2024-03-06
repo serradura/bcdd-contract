@@ -281,6 +281,13 @@ module BCDD::Contract
       )
 
       register(
+        name: :empty,
+        guard: ->(value, bool) { value.respond_to?(:empty?) && value.empty? == bool },
+        expectation: must_be_boolean,
+        reserve: true
+      )
+
+      register(
         name: :allow_nil,
         guard: ->(value, bool) { value.nil? == bool },
         expectation: must_be_boolean,
@@ -298,13 +305,6 @@ module BCDD::Contract
         name: :type,
         guard: ->(value, class_or_mod) { value.is_a?(class_or_mod) },
         expectation: ->(arg, err) { arg.is_a?(::Module) or err['%p must be a Class or a Module', arg] },
-        reserve: true
-      )
-
-      register(
-        name: :empty,
-        guard: ->(val, _) { !val.respond_to?(:empty?) || val.empty? },
-        expectation: must_be_boolean,
         reserve: true
       )
 
